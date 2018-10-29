@@ -1,0 +1,33 @@
+1)
+
+Take your own matrix multiplication program from the past homework
+(loop exchange and tiling with matrix multiplication), and parallelize
+the outer loop with OpenMP, then instead parallelize the inner loop.
+Take performance measurements of both parallel versions, and compare
+with performance of the original sequential program.
+Plot performance graphs with increasing number of threads
+(not exceeding the actual number of cores in your computer).
+Note the different speedup yielded by the OpenMP parallelization when the
+original sequential program is already optimized (by loop exchange and/or
+by tiling).
+
+Optionally, see what happens by enabling/disabling the CPU hyperthreading.
+
+You may recycle the script and the gnuplot command file from the past homework.
+
+Always compile with -O3; add option -fopenmp for the parallel programs
+(for clang or other compilers see the corresponding manual or do a web search).
+
+2)
+
+Take the 07_msort-seq.cpp example and parallelize it for any number of threads,
+taking inspiration from the two examples 08_msort-2tasks.cpp and
+09_msort-4tasks.cpp
+(which are respectively parallelized for 2 and 4 threads).
+
+Take performance measurement and plot performance graphs with varying size
+of the vector being sorted and increasing number of threads (up to the
+number of cores available).
+
+Optionally, try to parallelize the merge phase too, according to the algorithm
+explained in the paper parallel_merging.pdf.
