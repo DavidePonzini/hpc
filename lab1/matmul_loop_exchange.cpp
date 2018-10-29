@@ -49,11 +49,11 @@ int main ( int argc, char **argv ) {
 
             t1 = chrono::high_resolution_clock::now();
             for (i=0;i<n;i++)
-                for (k=0;k<n;k++) {
-                    for (j=0;j<n;j++)
+                for (k=0;k<n;k++)
+                    for (j=0;j<n;j++) {
                         if (k==0) c[i*n+j] = 0;
                         c[i*n+j] += a[i*n+k] * b[k*n+j];
-                }
+                	}
             t2 = chrono::high_resolution_clock::now();
             diff = t2 - t1;
 
