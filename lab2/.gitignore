@@ -1,0 +1,5 @@
+# executables
+matmul_block_access_parallel_inner
+matmul_block_access_parallel_outer
+matmul_loop_exchange_parallel_inner
+matmul_loop_exchange_parallel_outer
