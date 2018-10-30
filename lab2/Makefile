@@ -1,4 +1,4 @@
-CC=g++
+CC=g++-8
 CC_OPTS=
 
 compile: \
