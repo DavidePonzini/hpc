@@ -1,5 +1,7 @@
 CC=g++-8
 CC_OPTS=
+OMP_NUM_THREADS?=2
+
 
 compile: \
 	matmul_block_access_parallel_inner \
