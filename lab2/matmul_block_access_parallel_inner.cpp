@@ -2,15 +2,30 @@
 #include <ctime>
 #include <chrono>
 
+#include <omp.h>
+
 using namespace std;
 
 #define CACHELINE 64
 #define TRIALS 30
 #define MAXTIME 5.0 /* 5 seconds */
 
+
+#ifdef DEBUG
+void printMatrix(string name, double* mat, int row, int col) {
+    cout<<"\n [" + name + "] \n";
+    for(int i=0 ; i<=row-1 ; i++) {
+        for(int j=0 ; j<=col-1 ; j++)
+            cout<< mat[i*row+j]<<" ";
+        cout<<endl;
+    }
+    cout<<endl;
+}
+#endif
+
 int main ( int argc, char **argv ) {
 
-    int i,j,k,n,p,nmin,nmax,step;
+    int i,j,k,ii,jj,kk,n,p,nmin,nmax,step;
     double *a,*b,*c;
     chrono::high_resolution_clock::time_point tstart,t1,t2;
     chrono::duration<double> diff;
@@ -37,6 +52,11 @@ int main ( int argc, char **argv ) {
             b[i*nmax+j] = i;
     }
 
+#ifdef DEBUG	
+	printMatrix("a", a, nmax, nmax);
+	printMatrix("b", b, nmax, nmax);
+#endif
+	
 // performance evaluation for all matrix size from nmin to nmax
 
     for (n=nmin; n<=nmax; n += step) {
@@ -44,18 +64,36 @@ int main ( int argc, char **argv ) {
         min = 1.0e100;
         tstart = chrono::high_resolution_clock::now();
 
+#ifdef DEBUG
+	#undef TRIALS
+	#define TRIALS 1
+#endif
+
 // for each matrix size, run at most TRIALS times
         for (p=0; p<TRIALS; p++) {
 
             t1 = chrono::high_resolution_clock::now();
-            for (i=0;i<n;i++)
-                for (k=0;k<n;k++)
-                    for (j=0;j<n;j++) {
-                        if (k==0) c[i*n+j] = 0;
-                        c[i*n+j] += a[i*n+k] * b[k*n+j];
-                	}
-            t2 = chrono::high_resolution_clock::now();
-            diff = t2 - t1;
+
+             for (i = 0; i < n; i += CACHELINE)
+                for (j = 0; j < n; j += CACHELINE)
+#pragma omp parallel for private (k,ii,jj,kk) schedule (static)
+					for(k = 0; k < n; k += CACHELINE)
+						for(ii = i; ii < i+CACHELINE && ii < n; ii++)
+							for(jj = j; jj < j+CACHELINE && jj < n; jj++)
+								for(kk = k; kk < k+CACHELINE && kk < n; kk++)
+								{
+									if (!kk)
+										c[ii*n + jj] = 0;
+									c[ii*n + jj] += a[ii*n + kk] * b[kk*n + jj];
+								}
+			
+			t2 = chrono::high_resolution_clock::now();
+
+			diff = t2 - t1;
+			
+#ifdef DEBUG
+			printMatrix("c", c, nmax, nmax);
+#endif
 
 // take the best performance result
             if (diff.count() < min) min = diff.count();
