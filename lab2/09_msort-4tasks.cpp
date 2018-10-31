@@ -56,13 +56,17 @@ void mergesort2 (int* arr, int *temp, int low, int high) {
         mergesort(arr, temp, mid+1, mid+quarter+1);
         #pragma omp task
         mergesort(arr, temp, mid+quarter+2, high);
-        #pragma omp taskwait
+        
+		#pragma omp taskwait
+		
         #pragma omp task
         merge(arr, temp, low, quarter, mid);
         #pragma omp task
         merge(arr, temp, mid+1, mid+quarter+1, high);
-        #pragma omp taskwait
-        merge(arr, temp, low, mid, high);
+        
+		#pragma omp taskwait
+        
+		merge(arr, temp, low, mid, high);
     }
 }
 
