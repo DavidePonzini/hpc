@@ -8,8 +8,8 @@ set ylabel "performance (GFLOPS)" offset 0,-1
 set yrange [0 : 6]
 
 plot \
-"o0.dat" t "Intel Core i5 1.8GHz, 256KB L2 cache, DDR3 1600 MHz, gcc 7.3.0 -O0",\
-"o1.dat" t "Intel Core i5 1.8GHz, 256KB L2 cache, DDR3 1600 MHz, gcc 7.3.0 -O1",\
-"o2.dat" t "Intel Core i5 1.8GHz, 256KB L2 cache, DDR3 1600 MHz, gcc 7.3.0 -O2",\
-"o3.dat" t "Intel Core i5 1.8GHz, 256KB L2 cache, DDR3 1600 MHz, gcc 7.3.0 -O3"
+"o0.dat" t "Intel Core i5 1.8GHz, 256KB L2 cache, DDR3 1600 MHz, gcc 8,2.0 -O0",\
+"o1.dat" t "Intel Core i5 1.8GHz, 256KB L2 cache, DDR3 1600 MHz, gcc 8,2.0 -O1",\
+"o2.dat" t "Intel Core i5 1.8GHz, 256KB L2 cache, DDR3 1600 MHz, gcc 8,2.0 -O2",\
+"o3.dat" t "Intel Core i5 1.8GHz, 256KB L2 cache, DDR3 1600 MHz, gcc 8,2.0 -O3"
 
