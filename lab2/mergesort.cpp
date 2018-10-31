@@ -38,7 +38,7 @@ void mergesort (int* arr, int *temp, int low, int high) {
 	
 #ifdef DEBUG2
 	int t_no = omp_get_thread_num();
-	cout << t_no << '\t' << low << '\t' << high << endl;
+	printf("thread %d from %d to %d\n", t_no, low, high);
 #endif
 	
     if (low < high) {                
@@ -50,33 +50,25 @@ void mergesort (int* arr, int *temp, int low, int high) {
 }
 
 
-void mergesort1 (int* arr, int *temp, int low, int high) {
-	int threads_no = omp_get_num_threads();
-	int elems_no = high-low;
+void mergesort1 (int* arr, int *temp, int low, int high, int threads) {
+	printf("[%d] low: %d, high: %d, threads: %d\n", omp_get_thread_num(), low, high, threads);
 	
-	printf("low: %d, high: %d\n", low, high);
-	printf("elems: %d, threads: %d\n", elems_no, threads_no);
+	if(threads < 2)
+	{
+		mergesort(arr, temp, low, high);
+		return;
+	}
 	
-	if(threads_no > elems_no)
-		threads_no = elems_no;
+	int mid = (low+high)/2;
 	
-	float step = elems_no / threads_no;
 	
-    if (low < high) {
-		float i=low;
-		for (int t=0; t < threads_no; t++, i += step)
-		{
-			#pragma omp task
-			{
-#ifdef DEBUG
-	int t_no = omp_get_thread_num();
-	printf("thread %d from %f to %f\n", t_no, i+1, i+step);
-#endif	
-				//mergesort(arr, temp, i, i+step-1);
-			}
-			
-			
-		}
+	
+	if (low < high) {
+		#pragma omp task
+		mergesort1(arr, temp, low, mid, threads/2);
+		#pragma omp task
+		mergesort1(arr, temp, mid+1, high, threads/2);
+		
 		
         #pragma omp taskwait
         //merge(arr, temp, low, mid, high);
@@ -113,9 +105,13 @@ int main (int argc, char * argv[]) {
         #pragma omp parallel
         #pragma omp single
         {
+			int threads_no = omp_get_num_threads();
+			
             init = chrono::high_resolution_clock::now();
-            mergesort1(toBeSorted, temp, 0, SIZE-1);
-            end = chrono::high_resolution_clock::now();
+            
+			mergesort1(toBeSorted, temp, 0, SIZE-1, threads_no);
+            
+			end = chrono::high_resolution_clock::now();
         }
         
         diff = end - init;        
