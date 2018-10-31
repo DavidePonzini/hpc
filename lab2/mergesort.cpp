@@ -6,8 +6,13 @@ using namespace std;
 
 #include <omp.h>
 
-#define TRIALS 30
-#define SIZE 10000000
+#ifndef TRIALS
+	#define TRIALS 30
+#endif
+
+#ifndef SIZE
+	#define SIZE 10000000
+#endif
 
 
 void merge (int* arr, int *temp, int low, int mid, int high) {
@@ -51,7 +56,12 @@ void mergesort (int* arr, int *temp, int low, int high) {
 
 
 void mergesort1 (int* arr, int *temp, int low, int high, int threads) {
+#ifdef DEBUG
 	printf("[%d] low: %d, high: %d, threads: %d\n", omp_get_thread_num(), low, high, threads);
+#endif
+
+	if(!(low < high))
+		return;
 	
 	if(threads < 2)
 	{
@@ -60,31 +70,20 @@ void mergesort1 (int* arr, int *temp, int low, int high, int threads) {
 	}
 	
 	int mid = (low+high)/2;
+	int threads_first_task = threads/2;
 	
+	#pragma omp task
+	mergesort1(arr, temp, low, mid, threads_first_task);
 	
+	#pragma omp task
+	mergesort1(arr, temp, mid+1, high, threads - threads_first_task);
 	
-	if (low < high) {
-		#pragma omp task
-		mergesort1(arr, temp, low, mid, threads/2);
-		#pragma omp task
-		mergesort1(arr, temp, mid+1, high, threads/2);
-		
-		
-        #pragma omp taskwait
-        //merge(arr, temp, low, mid, high);
-    }
+	#pragma omp taskwait
+	merge(arr, temp, low, mid, high);
 }
 
 
 int main (int argc, char * argv[]) {
-
-#ifdef DEBUG
-	#undef TRIALS
-	#define TRIALS 1
-	
-	#undef SIZE
-	#define SIZE 10
-#endif
 
     int i;
     double min = 1.0e100;
