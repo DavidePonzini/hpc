@@ -4,6 +4,8 @@
 
 using namespace std;
 
+#include <omp.h>
+
 #define TRIALS 30
 #define SIZE 10000000
 
@@ -42,6 +44,19 @@ void mergesort (int* arr, int *temp, int low, int high) {
 }
 
 
+void mergesort1 (int* arr, int *temp, int low, int high) {
+    if (low < high) {                
+        int mid = (low + high) / 2;
+        #pragma omp task
+        mergesort(arr, temp, low, mid);
+        #pragma omp task
+        mergesort(arr, temp, mid+1, high);
+        #pragma omp taskwait
+        merge(arr, temp, low, mid, high);
+    }
+}
+
+
 int main (int argc, char * argv[]) {
 
     int i;
@@ -57,20 +72,24 @@ int main (int argc, char * argv[]) {
 // worst case: init with reversed order values
     for (i=0; i<SIZE; i++)
         toBeSorted[i] = SIZE-i;
-        
+
     for (i=0; i<TRIALS; i++) {
 
-        init = chrono::high_resolution_clock::now();
-        mergesort(toBeSorted, temp, 0, SIZE-1);
-        end = chrono::high_resolution_clock::now();
-
+        #pragma omp parallel num_threads(2)
+        #pragma omp single
+        {
+            init = chrono::high_resolution_clock::now();
+            mergesort1(toBeSorted, temp, 0, SIZE-1);
+            end = chrono::high_resolution_clock::now();
+        }
+        
         diff = end - init;        
                 
         if (diff.count() < min)
             min = diff.count();
-
+                
 #if 0
-// debug; use it only for small SIZE
+/*debug; use it only for small SIZE*/
         int z;
         for (z=0; z<SIZE-1; z++)
             if (toBeSorted[z] > toBeSorted[z+1])
