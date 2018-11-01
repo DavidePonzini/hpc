@@ -6,8 +6,13 @@ using namespace std;
 
 #include <omp.h>
 
-#define TRIALS 30
-#define SIZE 10000000
+#ifndef TRIALS
+	#define TRIALS 30
+#endif
+
+#ifndef SIZE
+	#define SIZE 10000000
+#endif
 
 
 void merge (int* arr, int *temp, int low, int mid, int high) {
@@ -35,6 +40,12 @@ void merge (int* arr, int *temp, int low, int mid, int high) {
 
 
 void mergesort (int* arr, int *temp, int low, int high) {
+	
+#ifdef DEBUG2
+	int t_no = omp_get_thread_num();
+	printf("thread %d from %d to %d\n", t_no, low, high);
+#endif
+	
     if (low < high) {                
         int mid = (low + high) / 2;
         mergesort(arr, temp, low, mid);
@@ -44,16 +55,31 @@ void mergesort (int* arr, int *temp, int low, int high) {
 }
 
 
-void mergesort1 (int* arr, int *temp, int low, int high) {
-    if (low < high) {                
-        int mid = (low + high) / 2;
-        #pragma omp task
-        mergesort(arr, temp, low, mid);
-        #pragma omp task
-        mergesort(arr, temp, mid+1, high);
-        #pragma omp taskwait
-        merge(arr, temp, low, mid, high);
-    }
+void mergesort1 (int* arr, int *temp, int low, int high, int threads) {
+#ifdef DEBUG
+	printf("[%d] low: %d, high: %d, threads: %d\n", omp_get_thread_num(), low, high, threads);
+#endif
+
+	if(!(low < high))
+		return;
+	
+	if(threads < 2)
+	{
+		mergesort(arr, temp, low, high);
+		return;
+	}
+	
+	int mid = (low+high)/2;
+	int threads_first_task = threads/2;
+	
+	#pragma omp task
+	mergesort1(arr, temp, low, mid, threads_first_task);
+	
+	#pragma omp task
+	mergesort1(arr, temp, mid+1, high, threads - threads_first_task);
+	
+	#pragma omp taskwait
+	merge(arr, temp, low, mid, high);
 }
 
 
@@ -75,12 +101,16 @@ int main (int argc, char * argv[]) {
 
     for (i=0; i<TRIALS; i++) {
 
-        #pragma omp parallel num_threads(2)
+        #pragma omp parallel
         #pragma omp single
         {
+			int threads_no = omp_get_num_threads();
+			
             init = chrono::high_resolution_clock::now();
-            mergesort1(toBeSorted, temp, 0, SIZE-1);
-            end = chrono::high_resolution_clock::now();
+            
+			mergesort1(toBeSorted, temp, 0, SIZE-1, threads_no);
+            
+			end = chrono::high_resolution_clock::now();
         }
         
         diff = end - init;        
@@ -88,7 +118,7 @@ int main (int argc, char * argv[]) {
         if (diff.count() < min)
             min = diff.count();
                 
-#if 0
+#ifdef DEBUG3
 /*debug; use it only for small SIZE*/
         int z;
         for (z=0; z<SIZE-1; z++)
