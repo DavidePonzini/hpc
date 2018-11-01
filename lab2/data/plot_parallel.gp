@@ -1,5 +1,5 @@
 set terminal png size 1920,1080 font b018015l 14
-set output "matmul-performance.png"
+set output "matmul-performance_tiling_vs_exchange.png"
 
 set style data lines
 set xlabel "matrix size" offset -1,0
