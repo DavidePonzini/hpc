@@ -1,4 +1,4 @@
-CC=g++-8
+CC=g++
 CC_OPTS=
 OMP_NUM_THREADS?=2
 
