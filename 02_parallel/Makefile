@@ -35,4 +35,3 @@ run: \
 	run_matmul_loop_exchange_parallel_inner \
 	run_matmul_loop_exchange_parallel_outer
 	
-	
