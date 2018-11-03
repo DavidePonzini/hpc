@@ -3,6 +3,13 @@ CC_OPTS=
 OMP_NUM_THREADS?=2
 
 
+run: \
+	run_matmul_loop_tiling_parallel_inner \
+	run_matmul_loop_tiling_parallel_outer \
+	run_matmul_loop_exchange_parallel_inner \
+	run_matmul_loop_exchange_parallel_outer
+	
+
 compile: \
 	matmul_loop_tiling_parallel_inner \
 	matmul_loop_tiling_parallel_outer \
@@ -29,9 +36,3 @@ run_%: compile
 	./$* 1100 3000 100 >> $*_T$(OMP_NUM_THREADS).dat
 	./$* 4000 6000 1000 >> $*_T$(OMP_NUM_THREADS).dat
 
-run: \
-	run_matmul_loop_tiling_parallel_inner \
-	run_matmul_loop_tiling_parallel_outer \
-	run_matmul_loop_exchange_parallel_inner \
-	run_matmul_loop_exchange_parallel_outer
-	
