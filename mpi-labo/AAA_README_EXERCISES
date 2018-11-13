@@ -1,0 +1,48 @@
+1)
+
+There is a MPI program in this folder, "ping_pong.cpp", along with another file called "nodelist".
+
+Compile the MPI program:
+
+mpic++ -std=c++11 -o pingpong ping_pong.cpp
+
+Look inside the nodelist; it is the list of (IP addresses of) cluster nodes to be used in our exercises.  The MPI application launcher will select nodes from the list in round-robin fashion.
+
+Run the MPI executable using the "mpiexec" launcher:
+
+mpiexec -n 2 -machinefile nodelist ./pingpong 0 1000
+
+it will measure the network throughput (MByte/sec) between two MPI process instances.  The two parameters are respectively the min and max message size.  For size=0 the program prints the network latency, not the throughput.  You can play with different message sizes.
+
+2)
+
+Make a copy of the original ping_pong.cpp program, then modify it so that it can work with any number of processes (not just two) in a circular fashion.
+
+To modify the program, follow one of two possible ways:
+a) use a text editor (e.g. "vi", "nano", "pico") directly on this machine;
+b) copy the program from this machine to your local computer with the "scp" command, perform the changes using your favourite editor, copy back to here.
+WINDOWS USERS: use pscp instead of scp, take it from the putty website.
+
+Compile the modified program and run.
+
+3)
+
+Modify the original ping_pong.cpp program so that both partners do exactly the same actions in the same order -- namely, both perform a MPI_Send() and then a MPI_Recv() in that precise order.  Compile and run.  See what happens when messages are "large enough".  Find the threshold of message size at which the program changes its behaviour.
+
+4)
+
+Modify the latter program using non-blocking send and recv so that it will work with arbitrary message size.
+
+5)
+
+Take the original ping_pong.cpp program and modify it so that it will measure the overhead of the MPI_Barrier() function, instead of the network latency -- in practice you will remove the send/recv pairs and replace them with a MPI_Barrier(), preserving all the remaining part.  Don't forget to change the performance calculation ;)  Compile and run.
+
+6)
+
+Make a copy of the latter program and modify it by replacing the MPI_Barrier() with your own (tree-like) implementation of the barrier algorithm.  Make it work.
+
+7)
+
+Take measurements from 5) and 6) and do a comparison.
+
+
