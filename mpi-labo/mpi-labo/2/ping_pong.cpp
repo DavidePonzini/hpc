@@ -17,7 +17,7 @@ using namespace std;
 
 int main (int argc, char **argv) {
 
-    int me, numinstances, i, len, min_len, max_len, partner;
+    int me, numinstances, i, len, min_len, max_len, partner, partner_prev;
 
     MPI_Status status;
     int tag = 4;
@@ -45,6 +45,7 @@ int main (int argc, char **argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     MPI_Comm_size(MPI_COMM_WORLD, &numinstances);
     partner = (me + 1) % numinstances;
+    partner_prev = (me - 1) % numinstances;
 
     record = new tr[5000];
     buffer = new unsigned char[max_len];
@@ -62,17 +63,17 @@ int main (int argc, char **argv) {
         if (me == 0) {
             t1 = chrono::high_resolution_clock::now();
             MPI_Send(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD);
-            MPI_Recv(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD,&status);
+            MPI_Recv(buffer,len,MPI_CHAR,partner_prev,tag,MPI_COMM_WORLD,&status);
             t2 = chrono::high_resolution_clock::now();
             diff = t2 - t1;
             if (diff.count() < min) min = diff.count();
         } else {
+            MPI_Recv(buffer,len,MPI_CHAR,partner_prev,tag,MPI_COMM_WORLD,&status);
             MPI_Send(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD);
-            MPI_Recv(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD,&status);
         }
     }
 
-    min = min/2;
+    min = min/numinstances;
 
     if (me == 0) {
 	record[idx].x = len;

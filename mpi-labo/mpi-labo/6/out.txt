@@ -1,0 +1,12 @@
+Send:	 5 --> 4 (1)
+Recv:	 0 --> 1 (1)
+Recv:	 4 --> 5 (1)
+Send:	 3 --> 2 (1)
+Recv:	 2 --> 3 (1)
+Send:	 1 --> 0 (1)
+Recv:	 4 --> 6 (2)
+Recv:	 0 --> 2 (2)
+Recv:	 0 --> 4 (4)
+Send:	 2 --> 0 (2)
+[mpiexec@cheetah] Sending Ctrl-C to processes as requested
+[mpiexec@cheetah] Press Ctrl-C again to force abort

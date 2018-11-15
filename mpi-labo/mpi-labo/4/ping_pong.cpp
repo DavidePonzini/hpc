@@ -19,7 +19,7 @@ int main (int argc, char **argv) {
 
     int me, numinstances, i, len, min_len, max_len, partner;
 
-    MPI_Status status;
+    MPI_Status status[2];
     int tag = 4;
 
     unsigned char *buffer;
@@ -54,6 +54,8 @@ int main (int argc, char **argv) {
     idx = 0;
     len = min_len;
 
+    MPI_Request req[2];
+
     while (len <= max_len) {
 
     min = 1e100;
@@ -61,14 +63,16 @@ int main (int argc, char **argv) {
     for (i=0;i<NTRIALS;i++) {
         if (me == 0) {
             t1 = chrono::high_resolution_clock::now();
-            MPI_Send(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD);
-            MPI_Recv(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD,&status);
+            MPI_Isend(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD, &req[0]);
+            MPI_Irecv(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD, &req[1]);
+            MPI_Waitall(2, req, status);
             t2 = chrono::high_resolution_clock::now();
             diff = t2 - t1;
             if (diff.count() < min) min = diff.count();
         } else {
-            MPI_Send(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD);
-            MPI_Recv(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD,&status);
+            MPI_Isend(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD, &req[0]);
+            MPI_Irecv(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD, &req[1]);
+            MPI_Waitall(2, req, status);
         }
     }
 

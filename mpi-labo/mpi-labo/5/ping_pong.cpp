@@ -10,9 +10,9 @@ using namespace std;
 
 #include "mpi.h"
 
-#define NTRIALS 200
+#define NTRIALS 2000
 
-#undef DELAY
+#define DELAY
 
 
 int main (int argc, char **argv) {
@@ -61,21 +61,17 @@ int main (int argc, char **argv) {
     for (i=0;i<NTRIALS;i++) {
         if (me == 0) {
             t1 = chrono::high_resolution_clock::now();
-            MPI_Send(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD);
-            MPI_Recv(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD,&status);
+            MPI_Barrier(MPI_COMM_WORLD);
             t2 = chrono::high_resolution_clock::now();
             diff = t2 - t1;
             if (diff.count() < min) min = diff.count();
         } else {
-            MPI_Send(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD);
-            MPI_Recv(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD,&status);
+            MPI_Barrier(MPI_COMM_WORLD);
         }
     }
 
-    min = min/2;
-
     if (me == 0) {
-	record[idx].x = len;
+	record[idx].x = numinstances;
 #ifdef DELAY
         record[idx].y = min*1e6;
 #else

@@ -67,8 +67,8 @@ int main (int argc, char **argv) {
             diff = t2 - t1;
             if (diff.count() < min) min = diff.count();
         } else {
-            MPI_Send(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD);
             MPI_Recv(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD,&status);
+            MPI_Send(buffer,len,MPI_CHAR,partner,tag,MPI_COMM_WORLD);
         }
     }
 
