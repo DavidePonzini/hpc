@@ -47,7 +47,7 @@ void barrier(int me, int numinstances, MPI_Status* status, int tag) {
             #ifdef DEBUG
             print("Recv", me, partner, mask);
             #endif
-            MPI_Recv(0,0,MPI_CHAR,partner,tag,MPI_COMM_WORLD,status);
+            MPI_Recv(0,0,MPI_CHAR,partner,MPI_ANY_TAG,MPI_COMM_WORLD,status);
             mask <<= 1;
             partner = me ^ mask;
         }
@@ -65,7 +65,7 @@ void barrier(int me, int numinstances, MPI_Status* status, int tag) {
             #ifdef DEBUG
             print("Recv2", me, partner, mask);
             #endif
-            MPI_Recv(0,0,MPI_CHAR,partner,tag,MPI_COMM_WORLD,status);
+            MPI_Recv(0,0,MPI_CHAR,partner,MPI_ANY_TAG,MPI_COMM_WORLD,status);
         }
         else {
             #ifdef DEBUG
