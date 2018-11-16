@@ -17,6 +17,11 @@ using namespace std;
 #undef DEBUG
 
 #ifdef DEBUG
+    #undef NTRIALS
+    #define NTRIALS 1
+#endif
+
+#ifdef DEBUG
 void print(const char* extra, int me, int partner, unsigned int mask){
     printf("%s:\t %d --> %d (%u)\n", extra, me, partner, mask);
 }
@@ -26,7 +31,7 @@ void barrier(int me, int numinstances, MPI_Status* status, int tag) {
     unsigned int mask = 1;
     int partner = me ^ mask;
 
-    while(mask <= numinstances) {
+    while(mask < numinstances) {
         if (partner >= numinstances) {
             #ifdef DEBUG
             print("Skip", me, partner, mask);
@@ -36,44 +41,56 @@ void barrier(int me, int numinstances, MPI_Status* status, int tag) {
             continue;
         }
 
-        if (me & mask){
+        if (me & mask) {
             #ifdef DEBUG
             print("Send", me, partner, mask);
             #endif
-            MPI_Send(0,0,MPI_CHAR,partner,tag,MPI_COMM_WORLD);
+            MPI_Send(0, 0, MPI_CHAR, partner, tag, MPI_COMM_WORLD);
+            mask <<= 1;
             break;
         }
         else {
             #ifdef DEBUG
             print("Recv", me, partner, mask);
             #endif
-            MPI_Recv(0,0,MPI_CHAR,partner,tag,MPI_COMM_WORLD,status);
+            MPI_Recv(0, 0, MPI_CHAR, partner, MPI_ANY_TAG, MPI_COMM_WORLD, status);
             mask <<= 1;
             partner = me ^ mask;
         }
     }
+
 #ifdef DEBUG
-    printf("%d exited locking phase\n", me);
+    printf("%d exited locking phase\tmask=%d\n", me, mask);
 #endif
-    while(!mask) {
-        mask >>= 1;
+
+    mask >>= 1;
+    while(mask) {
         partner = me ^ mask;
 
-        if (partner >= numinstances) break;
+        if (partner >= numinstances) {
+            mask >>= 1;
+            continue;
+        }
 
-        if (me & mask){
+        if (me & mask) {
             #ifdef DEBUG
             print("Recv2", me, partner, mask);
             #endif
-            MPI_Recv(0,0,MPI_CHAR,partner,tag,MPI_COMM_WORLD,status);
+            MPI_Recv(0, 0, MPI_CHAR, partner, MPI_ANY_TAG, MPI_COMM_WORLD, status);
         }
         else {
             #ifdef DEBUG
             print("Send2", me, partner, mask);
             #endif
-            MPI_Send(0,0,MPI_CHAR,partner,tag,MPI_COMM_WORLD);
+            MPI_Send(0, 0, MPI_CHAR, partner, tag, MPI_COMM_WORLD);
         }
+
+        mask >>= 1;
     }
+
+#ifdef DEBUG
+    printf("%d exited release phase\tmask=%d\n", me, mask);
+#endif
 
 }
 
@@ -81,7 +98,7 @@ void barrier(int me, int numinstances, MPI_Status* status, int tag) {
 int main (int argc, char **argv) {
 
     int me, numinstances, i, len, min_len, max_len, partner;
-    
+
     MPI_Status status;
     int tag = 4;
 
@@ -128,7 +145,7 @@ int main (int argc, char **argv) {
             t2 = chrono::high_resolution_clock::now();
             diff = t2 - t1;
             if (diff.count() < min) min = diff.count();
-        } 
+        }
         else {
             barrier(me, numinstances, &status, tag);
         }
