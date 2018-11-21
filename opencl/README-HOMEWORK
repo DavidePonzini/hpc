@@ -1,0 +1,80 @@
+OPENCL PROGRAMMING: TRANSIENT SIMULATION OF HEAT DIFFUSION IN A RECTANGULAR SLICE OF NEGLIGIBLE THICKNESS
+
+
+Write a C or C++ program that, by using OpenCL, performs a simulation of heat diffusion leveraging a GPU device for computation.
+
+The program receives the following input data as inline arguments:
+
+(brackets enclose the measurement unit to use)
+
+*) sizes of the rectangular slice (m)
+*) physical properties of the material: thermal conductivity k (W/(m K)), density d (Kg/m^3), specific heat c (J/(Kg*K))
+*) size of spatial discretization step L (m)
+*) timestep duration delta_t (s)
+*) total simulation time max_time (s)
+*) name of an input file containing the initial thermal configuration
+*) name of the output file that shall contain the final thermal configuration.
+
+The main() performs a loop of timesteps, starting from t=0 (begin of simulation) and incrementing t by delta_t until t exceeds max_time.
+At each iteration, the program takes the current thermal field and evolves it, obtaining a new thermal field.
+This new configuration is then used in the next timestep.
+At the end, the last obtained thermal field is written to the output file.
+Optionally, the program might also output some intermediate thermal configurations, in separate files, at regular intervals of simulated time.
+
+The rectangular slice is considered as divided into small, L x L, square cells (to do so, the sizes must be multiple of L;
+the program will adjust the sizes to ensure this).
+The thermal field being simulated consists of the central temperatures of each cell; they may be kept in a suitable 2-D matrix.
+We need two such matrices, namely, T[] and Tnew[].
+The thermal evolution transforms T[] into Tnew[] by applying this simple rule (derived in classroom):
+
+p = k/(d * c);
+discr = delta_t/(L*L);
+Tnew[i,j] = T[i,j](1-4*discr*p) + discr*p*(T[i-1,j]+T[i+1,j]+T[i,j-1]+T[i,j+1]);
+
+(the above is an instance of a 2-D <loud> stencil computation </loud>)
+
+For simplicity, the cells belonging to the boundary of the slice can be left at their initial temperature
+(this implements Dirichlet boundary conditions, speaking in differential terms).
+
+At each new iteration, the two matrices T and Tnew need be switched
+(Tnew computed in the previous iteration becomes T in the current one).
+This must be done without copying one into the other (that would be too time-consuming).
+The data movement between host and GPU must be minimized;
+it is indeed unnecessary to move matrices from host to CPU (and back) at each iteration,
+unless the main() needs to write the thermal field to an output file
+(this for sure happens at the end, and optionally at regular intervals during the simulation).
+
+The OpenCL program is quite simple if only global memory is used.
+Any additional effor to produce a version that uses local memory will be appreciated,
+regardless of the performance improvement possibly achieved.
+
+
+INPUT/OUTPUT
+
+To store a thermal field in a file, for each (i,j) in no particular order, the temperature T[i,j] is represented as a single row in the file:
+
+i j T[i,j]
+
+Both the input file and the output files must adhere to the above format.
+
+The above format can be easily plotted as a 2-D "heat map" using gnuplot, with the following command:
+
+$ gnuplot
+gnuplot> plot "filename" with images
+
+
+PERFORMANCE EVALUATION
+
+For performance evaluation, take a measurement of the completion time for a single timestep
+(e.g. by measuring the entire simulation loop and dividing by the number of iterations), and, separately,
+take a measurement of the time spent for moving data to/from GPU.
+Use four different problem sizes for the measurements:
+
+"XXL":    a slice with 2*10^8 cells (2mt x 1mt with L=0.0001)
+"Large":  a slice with 10^6 cells (1mt x 1mt with L=0.001)
+"Medium": a slice with 10^5 cells (0.1mt x 1mt with L=0.001)
+"Small":  a slice with 10^4 cells (0.1mt x 0.1mt with L=0.001)
+
+For comparison purposes, create also a sequential version of the simulator that uses only the CPU
+(by replacing the enqueueNDRangeKernel() with a traditional nested loop performing the computation over the thermal field)
+and take measurements of such version too.

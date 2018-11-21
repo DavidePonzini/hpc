@@ -1,0 +1,95 @@
+Content
+
+*) IN THIS DIRECTORY AND ON THE WEB
+
+*) HOW TO INSTALL OPENCL (AMD Radeon + Linux)
+
+===========================================================================
+
+IN THIS DIRECTORY AND ON THE WEB
+
+OpenCL_tutorial.pdf
+	introductory slides, some minor mistakes, a programming example,
+	good as the very first doc to read
+
+OpenCL_intro.pdf
+	more detailed introductory slides, interesting considerations about
+	performance on different hardware platforms
+
+AMD_Introduction_to_OpenCL_Programming_Training_Guide.pdf
+AMD_Introduction_to_OpenCL_Programming_Exercises/
+	a good introductory tutorial (the "installing" section is outdated)
+
+Introduction_to_OpenCL.pdf
+	last part interesting, explains how to enforce synchronization
+	among distinct enqueue() commands (so as to build a workflow)
+
+NVIDIA_OpenCL_Best_Practices_Guide.pdf
+	performance evaluation, and useful optimization hints
+
+OpenCL-tutorial-SC14.pdf
+	an extensive tutorial; uses the C++ programming interface of OpenCL
+
+OpenCL-2-0-quick-reference-card.pdf
+	the name is self-explaining
+
+http://www.khronos.org/registry/cl/sdk/2.0/docs/man/xhtml/
+	online man pages
+
+A. Munshi, B. R. Gaster, T. G. Mattson, J. Fung, D. Ginsburg
+"OpenCL Programming Guide", Addison-Wesley, 2012
+	a book. ask me for a copy ;)
+
+NVIDIA_OpenCL_Programming_Guide.pdf
+	more specific for the NVIDIA implementation of OpenCL, but the
+	introduction is worth a look; matrix multiplication example;
+	some guidelines for program optimization; low-level details
+	related to NVIDIA GPUs
+
+http://www.khronos.org/opencl/
+	a comprehensive site; contains pointers to OpenCL 2.0 stuff too.
+
+google search "amd opencl optimization case study"
+	a few case studies and optimization techniques, apparently no longer
+	linked by any other page in the AMD site.  Notably:
+	http://developer.amd.com/resources/articles-whitepapers/opencl-optimization-case-study-simple-reductions/
+
+http://www.cmsoft.com.br/opencl-tutorial/
+http://www.codeproject.com/Articles/110685/Part-OpenCL-Portable-Parallelism
+http://www.codeproject.com/Articles/122405/Part-OpenCL-Memory-Spaces
+http://www.codeproject.com/Articles/143395/Part-Work-Groups-and-Synchronization
+http://www.codeproject.com/Articles/839187/An-investigation-of-fast-real-time-GPU-based-image
+
+
+===========================================================================
+
+
+HOW TO INSTALL OPENCL (AMD Radeon + Linux)
+
+You may ask for an account on my own server, where OpenCL is already installed.
+
+Otherwise, installing OpenCL (library and includes) only takes a few minutes.
+
+On my server I have a AMD Radeon R9 390 videocard, so I chose to install the AMD APPSDK.  Choose a release here:
+http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/
+(scroll down to the "Downloads" section).
+
+After downloading the SDK, you need to download the appropriate driver for the videocard.  Find the match between your SDK release and the required videocard driver here:
+http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/system-requirements-driver-compatibility/
+and finally download the required driver for the videocard here:
+http://support.amd.com/en-us/download
+
+Without the driver for your videocard, you can still install and use AMDAPP but the only detected OpenCL device will be your CPU.
+
+The driver is not Free Software, so it won't load with a Linux kernel.  Moreover, it might not work with current Linux 4.x kernel series.  I personally had to install an old Linux 3.x kernel and hack the file firegl_public.c in the driver source code by replacing the macro
+MODULE_LICENSE("Proprietary. (C) 2002 - ATI Technologies, Starnberg, GERMANY");
+by this:
+MODULE_LICENSE("GPL");
+so the driver appears as GPL to the kernel and can be loaded.
+
+After installation and driver loading, you may use the utility "clinfo" for detecting all the OpenCL-capable devices in your platform.  You should be detected a device of type CPU, at least, plus a device of type GPU.
+
+The SDK provides C bindings (include CL/cl.h), and C++ bindings (include CL/cl.hpp).  An experimental Java binding can be found at http://www.jocl.org/
+
+===========================================================================
+
