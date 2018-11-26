@@ -1,66 +1,52 @@
+#include "file.h"
+
 #include <iostream>
 #include <fstream>
-#include <string>
-
-using namespace std;
 
 
-#define SZ 3
+void ReadMatrix(double* matrix, string filename, int size) {
+	ifstream file(filename.c_str());
 
-
-double* ReadMatrix(char* filename)
-{
-	ifstream file(filename);
-
-	double* matrix= new double[SZ*SZ];
-
-	for(int i=0; i<SZ*SZ; i++)
-	{
+	for(int i=0; i<size*size; i++) {
 		int row, col;
 		double val;
 
 		file >> row >> col >> val;
-		matrix[row*SZ + col] = val;
+		matrix[row*size + col] = val;
 	}
 
 	file.close();
-	return matrix;
 }
 
 
-void PrintMatrix(double* matrix, char* filename=NULL)
-{
+void PrintMatrix(double* matrix, int size, char* filename) {
 	ofstream file;
 	if(filename)
 		file.open(filename);
 
-	for(int row=0; row<SZ; row++)
-		for(int col=0; col<SZ; col++)
-		{
+	for(int row=0; row<size; row++)
+		for(int col=0; col<size; col++) {
 			if(filename)
-				file << row << ' ' << col << ' ' << matrix[row*SZ + col] << endl;
+				file << row << ' ' << col << ' ' << matrix[row*size + col] << endl;
 			else
-				cout << row << ' ' << col << ' ' << matrix[row*SZ + col] << endl;
+				cout << row << ' ' << col << ' ' << matrix[row*size + col] << endl;
 		}
 
 	if(filename)
 		file.close();
 }
 
-void PrintMatrix_Nice(double* matrix, char* filename=NULL)
-{
+void PrintMatrix_Nice(double* matrix, int size, char* filename) {
 	ofstream file;
 	if(filename)
 		file.open(filename);
 
-	for(int row=0; row<SZ; row++)
-	{
-		for(int col=0; col<SZ; col++)
-		{
+	for(int row=0; row<size; row++) {
+		for(int col=0; col<size; col++) {
 			if(filename)
-				file << matrix[row*SZ + col] << ' ';
+				file << matrix[row*size + col] << ' ';
 			else
-				cout << matrix[row*SZ + col] << ' ';
+				cout << matrix[row*size + col] << ' ';
 		}
 
 		if(filename)
@@ -69,16 +55,7 @@ void PrintMatrix_Nice(double* matrix, char* filename=NULL)
 			cout << endl;
 	}
 
-
 	if(filename)
 		file.close();
 }
 
-
-
-
-int main()
-{
-	double* matrix = ReadMatrix("in");
-	PrintMatrix_Nice(matrix);
-}
