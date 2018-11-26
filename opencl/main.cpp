@@ -6,7 +6,7 @@
 using namespace std;
 
 
-void f(double* T, double* Tnew, int size, double k, double d, double c, double delta_t, double max_time, double l) {
+void f(double* T, double* Tnew, int size, double k, double d, double c, double l, double delta_t, double max_time) {
 	double *m_in, *m_out, *aux;
 	m_in = T;
 	m_out = Tnew;
@@ -15,10 +15,17 @@ void f(double* T, double* Tnew, int size, double k, double d, double c, double d
 		double p = k/(d*c);
 		double discr = delta_t/(l*l);
 		
+		//printf("discr: %f\tp: %f\n", discr, p);
+		
 		for(int i=1; i<size-1; i++) {
 			for(int j=1; j<size-1; j++) {
-				m_out[i*size + j] = m_in[i*size + j]*(1-4*discr*p) + discr*p*(
+				m_out[i*size + j] = m_in[i*size + j]*(1.0-4.0*discr*p) + discr*p*(
 					m_in[(i-1)*size + j] + m_in[(i+1)*size + j] + m_in[i*size + j-1] + m_in[i*size + j+1]);
+		/*		printf("out[%d, %d] = %f*(1-4*%f*%f) + %f*%f*(%f + %f + %f + %f = %f\n",
+							 i,  j,   m_in[(i-1)*size + j], discr,p,discr,p,
+							 m_in[(i-1)*size + j], m_in[(i+1)*size + j], m_in[i*size + j-1], m_in[i*size + j+1],
+							 m_out[i*size+j]);
+		*/
 			}
 		}
 		
@@ -60,7 +67,9 @@ int main(int argc, char** argv) {
 	ReadMatrix(T, filename_in, size);
 	ReadMatrix(Tnew, filename_in, size);
 	
-	f(T, Tnew, size, k, d, c, delta_t, max_time, l);
+	PrintMatrix_Nice(T, size);
+	
+	f(T, Tnew, size, k, d, c, l, delta_t, max_time);
 	
 	printf("t: %p\ntnew: %p\n\n", T, Tnew);
 	

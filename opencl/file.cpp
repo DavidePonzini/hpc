@@ -44,9 +44,9 @@ void PrintMatrix_Nice(double* matrix, int size, char* filename) {
 	for(int row=0; row<size; row++) {
 		for(int col=0; col<size; col++) {
 			if(filename)
-				file << matrix[row*size + col] << ' ';
+				file << matrix[row*size + col] << '\t';
 			else
-				cout << matrix[row*size + col] << ' ';
+				cout << matrix[row*size + col] << '\t';
 		}
 
 		if(filename)
