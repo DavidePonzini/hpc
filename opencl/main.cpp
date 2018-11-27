@@ -78,6 +78,7 @@ int main(int argc, char** argv) {
 	printf("res: %p\n", result);
 	
 	PrintMatrix_Nice(result, size);
+	PrintMatrix(result, size, filename_out);
 	
 	return 0;
 }

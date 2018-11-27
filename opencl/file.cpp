@@ -19,43 +19,43 @@ void ReadMatrix(double* matrix, string filename, int size) {
 }
 
 
-void PrintMatrix(double* matrix, int size, char* filename) {
+void PrintMatrix(double* matrix, int size, string filename) {
 	ofstream file;
-	if(filename)
-		file.open(filename);
+	if(!filename.empty())
+		file.open(filename.c_str());
 
 	for(int row=0; row<size; row++)
 		for(int col=0; col<size; col++) {
-			if(filename)
+			if(!filename.empty())
 				file << row << ' ' << col << ' ' << matrix[row*size + col] << endl;
 			else
 				cout << row << ' ' << col << ' ' << matrix[row*size + col] << endl;
 		}
 
-	if(filename)
+	if(!filename.empty())
 		file.close();
 }
 
-void PrintMatrix_Nice(double* matrix, int size, char* filename) {
+void PrintMatrix_Nice(double* matrix, int size, string filename) {
 	ofstream file;
-	if(filename)
-		file.open(filename);
+	if(!filename.empty())
+		file.open(filename.c_str());
 
 	for(int row=0; row<size; row++) {
 		for(int col=0; col<size; col++) {
-			if(filename)
+			if(!filename.empty())
 				file << matrix[row*size + col] << '\t';
 			else
 				cout << matrix[row*size + col] << '\t';
 		}
 
-		if(filename)
+		if(!filename.empty())
 			file << endl;
 		else
 			cout << endl;
 	}
 
-	if(filename)
+	if(!filename.empty())
 		file.close();
 }
 
