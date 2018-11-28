@@ -21,5 +21,5 @@ run: compile
 	./main $(SIZE) $(K) $(D) $(C) $(STEP) $(DT) $(TIME) $(IN) $(OUT)
 
 compile: *.cpp *.h
-	$(CC) -std=c++11 -fOpenCL -O3 -o main $(CC_OPTS) *.cpp
+	$(CC) -std=c++11 -O3 -o main $(CC_OPTS) *.cpp
 
