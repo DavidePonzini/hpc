@@ -23,3 +23,8 @@ run: compile
 compile: *.cpp *.h
 	$(CC) -std=c++11 -O3 -o main $(CC_OPTS) *.cpp
 
+compile2: main2.cpp file.cpp file.h
+	$(CC) -std=c++11 -lOpenCL -O3 -o main2 $(CC_OPTS) main2.cpp file.cpp
+
+run2: compile2
+	qsub -o log -e err ./script.sh

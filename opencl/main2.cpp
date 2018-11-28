@@ -3,6 +3,8 @@
 
 #include "file.h"
 
+#include <CL/cl.h>
+
 using namespace std;
 
 
@@ -10,91 +12,91 @@ using namespace std;
 
 
 const char* source =
-"kernel void g(double* m_in, double* m_out, int size, double p, double discr) {"
+"kernel void g(global double* m_in, global double* m_out, int size, double p, double discr) {"
 "	int i = get_global_id(0);"
 "	int j = get_global_id(1);"
-	
+
 "	int ii = get_local_id(0);"
 "	int jj = get_local_id(1);"
-	
-"	if(i*ii || i*ii == size-1 || j*jj || j*jj == size-1)"
+
+"	if(!i || !j || i+ii == size-1 || j+jj == size-1)"
 "		return;"
-	
+
 "	m_out[(i+ii)*size + j+jj] = m_in[(i+ii)*size + j+jj]*(1.0-4.0*discr*p) + discr*p*("
 "					m_in[(i+ii-1)*size + j+jj] +"
 "					m_in[(i+ii+1)*size + j+jj] +"
 "					m_in[(i+ii)*size + j+jj-1] +"
 "					m_in[(i+ii)*size + j+jj+1]);"
-"}"
+"}";
 
 
 int f(double* T, double* Tnew, int size, double k, double d, double c, double l, double delta_t, double max_time) {
 	double *m_in, *m_out, *aux;
 	m_in = T;
 	m_out = Tnew;
-	
-	cl_platform_id platform_id;
-    cl_device_id device_id;
-    cl_uint n_platforms = 0, n_devices = 0;
-    cl_context_properties properties[3];
-    cl_int err = CL_SUCCESS;
-    cl_context context;
-    cl_command_queue queue;
-    cl_program program;
-    cl_kernel kernel;
-    cl_mem t_bff, tnew_bff;
-	
-	if (clGetPlatformIDs(1,&platform_id,&n_platforms) != CL_SUCCESS) {
-        cerr << "error: no platform\n";
-        return 1;
-    };
-	
-	if (clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1, &device_id, &n_devices) != CL_SUCCESS)
-    {
-        cerr << "error: no device\n";
-        return 1;
-    };
-	
-	properties[0]= CL_CONTEXT_PLATFORM;
-    properties[1]= (cl_context_properties) platform_id;
-    properties[2]= 0;
 
-    context = clCreateContext(properties, 1, &device_id, NULL, NULL, &err);
-    if (err != CL_SUCCESS){
-        cerr << "error creating context\n";
-        return 1;
-    };
+	cl_platform_id platform_id;
+	cl_device_id device_id;
+	cl_uint n_platforms = 0, n_devices = 0;
+	cl_context_properties properties[3];
+	cl_int err = CL_SUCCESS;
+	cl_context context;
+	cl_command_queue queue;
+	cl_program program;
+	cl_kernel kernel;
+	cl_mem in_bff, out_bff;
+
+	if (clGetPlatformIDs(1,&platform_id,&n_platforms) != CL_SUCCESS) {
+        	cerr << "error: no platform\n";
+        	return err;
+	};
+
+	if (clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1, &device_id, &n_devices) != CL_SUCCESS)
+	{
+        	cerr << "error: no device\n";
+        	return err;
+	};
+
+	properties[0]= CL_CONTEXT_PLATFORM;
+	properties[1]= (cl_context_properties) platform_id;
+	properties[2]= 0;
+
+	context = clCreateContext(properties, 1, &device_id, NULL, NULL, &err);
+	if (err != CL_SUCCESS){
+        	cerr << "error creating context\n";
+		return err;
+	};
 
 	queue = clCreateCommandQueueWithProperties(context, device_id, (cl_command_queue_properties)0, &err);
-	
+
 	program = clCreateProgramWithSource(context, 1, (const char**)&source, NULL, &err);
-    if (err != CL_SUCCESS){
-        cerr << "error creating kernel program\n";
-        return 1;
-    };
+	if (err != CL_SUCCESS){
+        	cerr << "error creating kernel program\n";
+        	return err;
+	};
 
-    err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
-    if (err != CL_SUCCESS){
-        cerr << "error building kernel program\n";
-        return 1;
-    };
+    	err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
+	if (err != CL_SUCCESS){
+		cerr << "error building kernel program\n";
+		return err;
+	};
 
-    kernel = clCreateKernel(program, "g", &err);
-    if (err != CL_SUCCESS){
-        cerr << "error creating kernel executable\n";
-        return 1;
-    };
-	
+    	kernel = clCreateKernel(program, "g", &err);
+    	if (err != CL_SUCCESS){
+        	cerr << "error creating kernel executable\n";
+        	return err;
+    	};
+
 	size_t global_pattern[] = {(size_t)size,(size_t)size,0};
-	size_t group_pattern[] = {BLOCK,BLOCK,0};	
-	
+	size_t group_pattern[] = {BLOCK,BLOCK,0};
+
 	for(double t=0.0; t <= max_time; t += delta_t) {
 		double p = k/(d*c);
 		double discr = delta_t/(l*l);
-		
+
 		in_bff = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, size * size * sizeof(cl_double), m_in, &err);
 		out_bff = clCreateBuffer(context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, size * size * sizeof(cl_double), m_out, &err);
-		
+
 		err |= clSetKernelArg(kernel, 0, sizeof(in_bff), &in_bff);
 		err |= clSetKernelArg(kernel, 1, sizeof(out_bff), &out_bff);
 		err |= clSetKernelArg(kernel, 2, sizeof(size), &size);
@@ -102,9 +104,9 @@ int f(double* T, double* Tnew, int size, double k, double d, double c, double l,
 		err |= clSetKernelArg(kernel, 4, sizeof(discr), &discr);
 		if (err != CL_SUCCESS){
 			cerr << "error creating or passing parameters to kernel\n";
-			return 1;
+			return err;
 		};
-		
+
 		// skip mem overhead
 #if 0
 		err = clEnqueueWriteBuffer(queue, in_bff, CL_FALSE, 0, size * size * sizeof(cl_double), m_in, 0, NULL, NULL);
@@ -112,14 +114,14 @@ int f(double* T, double* Tnew, int size, double k, double d, double c, double l,
 		err = clFinish(queue);
 		if (err != CL_SUCCESS){
 			cerr << "error passing input data\n";
-			return 1;
+			return err;
 		};
 #endif
-		
+
 		err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global_pattern, group_pattern, 0, NULL, NULL);
 		if (err != CL_SUCCESS){
 			cerr << "error running kernel\n";
-			return 1;
+			return err;
 		};
 
 #if 0
@@ -129,34 +131,33 @@ int f(double* T, double* Tnew, int size, double k, double d, double c, double l,
 		err = clEnqueueReadBuffer(queue, out_bff, CL_TRUE, 0, size * size * sizeof(cl_double), m_out, 0, NULL, NULL);
 		if (err != CL_SUCCESS){
 			cerr << "error getting results\n";
-			return 1;
+			return err;
 		};
-		
+
 		clReleaseMemObject(in_bff);
 		clReleaseMemObject(out_bff);
-		
-		}
-		
+
 		aux = m_in;
 		m_in = m_out;
 		m_out = aux;
 	}
-	
-	clReleaseKernel(kernel);
-    clReleaseProgram(program);
-    clReleaseCommandQueue(queue);
-    clReleaseContext(context);
 
+	clReleaseKernel(kernel);
+	clReleaseProgram(program);
+	clReleaseCommandQueue(queue);
+	clReleaseContext(context);
+
+	return 0;
 }
 
 
 int main(int argc, char** argv) {
 	if(argc != 10)
 		return 1;
-	
+
 	double slice, k, d, c, l, delta_t, max_time;
 	string filename_in, filename_out;
-	
+
 	slice = stod(argv[1]);		// slice size
 	k = stod(argv[2]);			// thermal conductivity
 	d = stod(argv[3]);			// density
@@ -167,35 +168,36 @@ int main(int argc, char** argv) {
 
 	filename_in = argv[8];
 	filename_out = argv[9];
-	
+
 	// normalization
 	int size = slice/l;
 	slice = l*size;
-	
+
 	double *T, *Tnew;
 	T = new double[size*size];
 	Tnew = new double[size*size];
-	
+
 	printf("t: %p\ntnew: %p\n\n", T, Tnew);
-	
+
 	ReadMatrix(T, filename_in, size);
 	ReadMatrix(Tnew, filename_in, size);
-	
+
 	PrintMatrix_Nice(T, size);
-	
-	int i = f(T, Tnew, size, k, d, c, l, delta_t, max_time);
-	if(!i)
-		return i;
-		
-	
+
+	int status = f(T, Tnew, size, k, d, c, l, delta_t, max_time);
+	if(status) {
+		cerr << "exit code: " << status << endl;
+		return status;
+	}
+
 	printf("t: %p\ntnew: %p\n\n", T, Tnew);
-	
+
 	double* result = ((int)(max_time/delta_t) % 2) ? Tnew : T;
-	
+
 	printf("res: %p\n", result);
-	
+
 	PrintMatrix_Nice(result, size);
 	PrintMatrix(result, size, filename_out);
-	
+
 	return 0;
 }
