@@ -7,8 +7,9 @@
 
 using namespace std;
 
-
-#define      BLOCK 15
+#ifndef BLOCK
+	#define  BLOCK 1
+#endif
 
 
 const char* source =
@@ -19,14 +20,24 @@ const char* source =
 "	int ii = get_local_id(0);"
 "	int jj = get_local_id(1);"
 
-"	if(!i || !j || i+ii == size-1 || j+jj == size-1)"
+"	if(i+ii == 0 || j+jj == 0) {"
+//"		m_out[(i+ii)*size + j+jj] = 1111;"
 "		return;"
+"	}"
+"	if(i+ii == size-1 || j+jj == size-1) {"
+//"		m_out[(i+ii)*size + j+jj] = 2222;"
+"		return;"
+"	}"
 
-"	m_out[(i+ii)*size + j+jj] = m_in[(i+ii)*size + j+jj]*(1.0-4.0*discr*p) + discr*p*("
+"	m_out[(i+ii)*size + j+jj] = "//i*1000 + j;"
+//"		i*1000+ii*100+j*10+jj;"
+
+"				m_in[(i+ii)*size + j+jj]*(1.0-4.0*discr*p) + discr*p*("
 "					m_in[(i+ii-1)*size + j+jj] +"
 "					m_in[(i+ii+1)*size + j+jj] +"
 "					m_in[(i+ii)*size + j+jj-1] +"
 "					m_in[(i+ii)*size + j+jj+1]);"
+
 "}";
 
 
@@ -47,14 +58,14 @@ int f(double* T, double* Tnew, int size, double k, double d, double c, double l,
 	cl_mem in_bff, out_bff;
 
 	if (clGetPlatformIDs(1,&platform_id,&n_platforms) != CL_SUCCESS) {
-        	cerr << "error: no platform\n";
-        	return err;
+		cerr << "error: no platform\n";
+		return err;
 	};
 
 	if (clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1, &device_id, &n_devices) != CL_SUCCESS)
 	{
-        	cerr << "error: no device\n";
-        	return err;
+		cerr << "error: no device\n";
+		return err;
 	};
 
 	properties[0]= CL_CONTEXT_PLATFORM;
@@ -63,7 +74,7 @@ int f(double* T, double* Tnew, int size, double k, double d, double c, double l,
 
 	context = clCreateContext(properties, 1, &device_id, NULL, NULL, &err);
 	if (err != CL_SUCCESS){
-        	cerr << "error creating context\n";
+		cerr << "error creating context\n";
 		return err;
 	};
 
@@ -71,21 +82,21 @@ int f(double* T, double* Tnew, int size, double k, double d, double c, double l,
 
 	program = clCreateProgramWithSource(context, 1, (const char**)&source, NULL, &err);
 	if (err != CL_SUCCESS){
-        	cerr << "error creating kernel program\n";
-        	return err;
+		cerr << "error creating kernel program\n";
+		return err;
 	};
 
-    	err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
+	err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
 	if (err != CL_SUCCESS){
 		cerr << "error building kernel program\n";
 		return err;
 	};
 
-    	kernel = clCreateKernel(program, "g", &err);
-    	if (err != CL_SUCCESS){
-        	cerr << "error creating kernel executable\n";
-        	return err;
-    	};
+	kernel = clCreateKernel(program, "g", &err);
+	if (err != CL_SUCCESS){
+		cerr << "error creating kernel executable\n";
+		return err;
+	};
 
 	size_t global_pattern[] = {(size_t)size,(size_t)size,0};
 	size_t group_pattern[] = {BLOCK,BLOCK,0};
