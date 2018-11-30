@@ -13,6 +13,7 @@ using namespace std;
 
 
 const char* source =
+"#define BLOCK 5\n"
 "kernel void g(global double* m_in, global double* m_out, int size, double p, double discr) {"
 "	int i = get_global_id(0);"
 "	int j = get_global_id(1);"
@@ -20,24 +21,35 @@ const char* source =
 "	int ii = get_local_id(0);"
 "	int jj = get_local_id(1);"
 
-"	if(i+ii == 0 || j+jj == 0) {"
-//"		m_out[(i+ii)*size + j+jj] = 1111;"
+"	local double l_in[(BLOCK+2)*(BLOCK+2)];"
+
+"	l_in[(ii+1)*(BLOCK+2) + jj+1] = m_in[i*size+j];"
+
+"	if(!ii)"
+"		l_in[jj+1] = m_in[(i-1)*size+j];"
+"	if(!jj)"
+"		l_in[(ii+1)*(BLOCK+2)] = m_in[i*size+j-1];"
+"	if(ii == BLOCK-1)"
+"		l_in[(BLOCK+1)*(BLOCK+2)+jj+1] = m_in[(i+1)*size+j];"
+"	if(jj == BLOCK-1)"
+"		l_in[(ii+1)*(BLOCK+2)+BLOCK+1] = m_in[i*size+j+1];"
+
+"	barrier(CLK_LOCAL_MEM_FENCE);"
+
+"	if(i==0 || j == 0) {"
+//"		m_out[i*size + j] = 1111;"
 "		return;"
 "	}"
-"	if(i+ii == size-1 || j+jj == size-1) {"
-//"		m_out[(i+ii)*size + j+jj] = 2222;"
+"	if(i == size-1 || j == size-1) {"
+//"		m_out[i*size + j] = 2222;"
 "		return;"
 "	}"
 
-"	m_out[(i+ii)*size + j+jj] = "//i*1000 + j;"
-//"		i*1000+ii*100+j*10+jj;"
-
-"				m_in[(i+ii)*size + j+jj]*(1.0-4.0*discr*p) + discr*p*("
-"					m_in[(i+ii-1)*size + j+jj] +"
-"					m_in[(i+ii+1)*size + j+jj] +"
-"					m_in[(i+ii)*size + j+jj-1] +"
-"					m_in[(i+ii)*size + j+jj+1]);"
-
+"	m_out[i*size + j] = l_in[(ii+1)*(BLOCK+2) + jj+1]*(1.0-4.0*discr*p) + discr*p*("
+"				l_in[ii*(BLOCK+2) + jj+1] +"
+"				l_in[(ii+2)*(BLOCK+2) + jj+1] +"
+"				l_in[(ii+1)*(BLOCK+2) + jj] +"
+"				l_in[(ii+1)*(BLOCK+2) + jj+2]);"
 "}";
 
 
