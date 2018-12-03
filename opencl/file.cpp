@@ -6,7 +6,7 @@
 
 void EmptyMatrix(double* matrix, int size_i, int size_j) {
 	for (int i=0; i<size_i*size_j; i++)
-		Tnew[i]=0;
+		matrix[i]=0;
 }
 
 void ReadMatrix(double* matrix, string filename, int size_i, int size_j) {

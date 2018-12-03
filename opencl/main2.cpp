@@ -14,6 +14,8 @@ using namespace std;
 #define  BLOCK 5
 
 
+string get_error_string(int e) { return ""+e; }
+
 const char* source =
 "#define BLOCK 5\n"
 "kernel void g(global double* m_in, global double* m_out, int size_i, int size_j, double p, double discr, int steps) {"
@@ -27,10 +29,10 @@ const char* source =
 
 "	global double* in = m_in;"
 "	global double* out = m_out;"
-"	global double* aux = NULL;"
+"	global double* aux;"
 
 "	for(int step=0; step<steps; step++) {"
-"		l_in[(ii+1)*(BLOCK+2) + jj+1] = in[i*size_i+j];"		
+"		l_in[(ii+1)*(BLOCK+2) + jj+1] = in[i*size_i+j];"
 
 		// copy block in local mem
 "		if(!ii)"
@@ -78,7 +80,7 @@ int f(double* T, double* Tnew, int size_i, int size_j, double k, double d, doubl
 	cl_program program;
 	cl_kernel kernel;
 	cl_mem in_bff, out_bff;
-	
+
 	chrono::high_resolution_clock::time_point t_start,t_end;
     chrono::duration<double> exec_time;
 
@@ -114,6 +116,36 @@ int f(double* T, double* Tnew, int size_i, int size_j, double k, double d, doubl
 	err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
 	if (err != CL_SUCCESS){
 		cerr << "error building kernel program\n";
+
+		size_t len;
+		char buffer[204800];
+		cl_build_status bldstatus;
+		printf("\nError %d: Failed to build program executable [ %s ]\n",err,get_error_string(err));
+		err = clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_STATUS, sizeof(bldstatus), (void *)&bldstatus, &len);
+		if (err != CL_SUCCESS)
+		{
+			printf("Build Status error %d: %s\n",err,get_error_string(err));
+			return err;
+		}
+		if (bldstatus == CL_BUILD_SUCCESS) printf("Build Status: CL_BUILD_SUCCESS\n");
+		if (bldstatus == CL_BUILD_NONE) printf("Build Status: CL_BUILD_NONE\n");
+		if (bldstatus == CL_BUILD_ERROR) printf("Build Status: CL_BUILD_ERROR\n");
+		if (bldstatus == CL_BUILD_IN_PROGRESS) printf("Build Status: CL_BUILD_IN_PROGRESS\n");
+		err = clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_OPTIONS, sizeof(buffer), buffer, &len);
+		if (err != CL_SUCCESS)
+		{
+			printf("Build Options error %d: %s\n",err,get_error_string(err));
+			return err;
+		}
+		printf("Build Options: %s\n", buffer);
+		err = clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &len);
+		if (err != CL_SUCCESS)
+		{
+			printf("Build Log error %d: %s\n",err,get_error_string(err));
+			return err;
+		}
+		printf("Build Log:\n%s\n", buffer);
+
 		return err;
 	};
 
@@ -129,71 +161,66 @@ int f(double* T, double* Tnew, int size_i, int size_j, double k, double d, doubl
 	///////////////////////////////////////////////
     t_start = chrono::high_resolution_clock::now();
     ///////////////////////////////////////////////
-	
-	//for(double t=0.0; t <= max_time; t += delta_t) {
-		int steps = max_time/delta_t;
-		double p = k/(d*c);
-		double discr = delta_t/(l*l);
 
-		in_bff = clCreateBuffer(context, /*CL_MEM_READ_ONLY*/   CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
-			size_i * size_j * sizeof(cl_double), m_in, &err);
-		out_bff = clCreateBuffer(context, /*CL_MEM_WRITE_ONLY*/ CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
-			size_i * size_j * sizeof(cl_double), m_out, &err);
+	int steps = max_time/delta_t;
+	double p = k/(d*c);
+	double discr = delta_t/(l*l);
 
-		err |= clSetKernelArg(kernel, 0, sizeof(in_bff), &in_bff);
-		err |= clSetKernelArg(kernel, 1, sizeof(out_bff), &out_bff);
-		err |= clSetKernelArg(kernel, 2, sizeof(size_i), &size_i);
-		err |= clSetKernelArg(kernel, 3, sizeof(size_j), &size_j);
-		err |= clSetKernelArg(kernel, 4, sizeof(p), &p);
-		err |= clSetKernelArg(kernel, 5, sizeof(discr), &discr);
-		err |= clSetKernelArg(kernel, 6, sizeof(steps), &steps);
-		
-		if (err != CL_SUCCESS){
-			cerr << "error creating or passing parameters to kernel\n";
-			return err;
-		};
+	in_bff = clCreateBuffer(context, /*CL_MEM_READ_ONLY*/   CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+		size_i * size_j * sizeof(cl_double), m_in, &err);
+	out_bff = clCreateBuffer(context, /*CL_MEM_WRITE_ONLY*/ CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+		size_i * size_j * sizeof(cl_double), m_out, &err);
 
-		// skip mem overhead
-#if 0
-		err = clEnqueueWriteBuffer(queue, in_bff, CL_FALSE, 0, size_i * size_j * sizeof(cl_double), m_in, 0, NULL, NULL);
-		// be sure the transfer is done before running the kernel
-		err = clFinish(queue);
-		if (err != CL_SUCCESS){
-			cerr << "error passing input data\n";
-			return err;
-		};
+	err |= clSetKernelArg(kernel, 0, sizeof(in_bff), &in_bff);
+	err |= clSetKernelArg(kernel, 1, sizeof(out_bff), &out_bff);
+	err |= clSetKernelArg(kernel, 2, sizeof(size_i), &size_i);
+	err |= clSetKernelArg(kernel, 3, sizeof(size_j), &size_j);
+	err |= clSetKernelArg(kernel, 4, sizeof(p), &p);
+	err |= clSetKernelArg(kernel, 5, sizeof(discr), &discr);
+	err |= clSetKernelArg(kernel, 6, sizeof(steps), &steps);
+
+	if (err != CL_SUCCESS){
+		cerr << "error creating or passing parameters to kernel\n";
+		return err;
+	};
+
+// skip mem overhead
+#ifdef SKIP_OVERHEAD
+	err = clEnqueueWriteBuffer(queue, in_bff, CL_FALSE, 0, size_i * size_j * sizeof(cl_double), m_in, 0, NULL, NULL);
+	// be sure the transfer is done before running the kernel
+	err = clFinish(queue);
+	if (err != CL_SUCCESS){
+		cerr << "error passing input data\n";
+		return err;
+	};
 #endif
 
-		err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global_pattern, group_pattern, 0, NULL, NULL);
-		if (err != CL_SUCCESS){
-			cerr << "error running kernel\n";
-			return err;
-		};
+	err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global_pattern, group_pattern, 0, NULL, NULL);
+	if (err != CL_SUCCESS){
+		cerr << "error running kernel\n";
+		return err;
+	};
 
-#if 0
-		err = clFinish(queue);
+#ifdef SKIP_OVERHEAD
+	err = clFinish(queue);
 #endif
 
-		err = clEnqueueReadBuffer(queue, out_bff, CL_TRUE, 0, size_i * size_j * sizeof(cl_double), m_out, 0, NULL, NULL);
-		if (err != CL_SUCCESS){
-			cerr << "error getting results\n";
-			return err;
-		};
-		
-		/////////////////////////////////////////////
-		t_end = chrono::high_resolution_clock::now();
-		/////////////////////////////////////////////
+	err = clEnqueueReadBuffer(queue, ((int)(max_time/delta_t) % 2) ? out_bff : in_bff, CL_TRUE, 0, size_i * size_j * sizeof(cl_double), m_out, 0, NULL, 
+	NULL);
+	if (err != CL_SUCCESS){
+		cerr << "error getting results\n";
+		return err;
+	};
 
-		clReleaseMemObject(in_bff);
-		clReleaseMemObject(out_bff);
+	/////////////////////////////////////////////
+	t_end = chrono::high_resolution_clock::now();
+	/////////////////////////////////////////////
 
-		aux = m_in;
-		m_in = m_out;
-		m_out = aux;
-		
-		exec_time = t_end - t_start;
-		cout << "execution time: " << exec_time.count() * 1e6 << " usec\n";
-//	}
+	clReleaseMemObject(in_bff);
+	clReleaseMemObject(out_bff);
+
+	exec_time = t_end - t_start;
+	cout << "execution time: " << exec_time.count() * 1e6 << " usec\n";
 
 	clReleaseKernel(kernel);
 	clReleaseProgram(program);
@@ -208,7 +235,7 @@ int main(int argc, char** argv) {
 	if(argc != 11)
 		return 1;
 
-	double slice, k, d, c, l, delta_t, max_time;
+	double slice_i, slice_j, k, d, c, l, delta_t, max_time;
 	string filename_in, filename_out;
 
 	slice_i = stod(argv[1]);	// slice size (rows)
@@ -247,12 +274,13 @@ int main(int argc, char** argv) {
 
 	printf("t: %p\ntnew: %p\n\n", T, Tnew);
 
-	double* result = ((int)(max_time/delta_t) % 2) ? Tnew : T;
+//	double* result = ((int)(max_time/delta_t) % 2) ? Tnew : T;
 
-	printf("res: %p\n", result);
+//	printf("res: %p\n", result);
+	printf("res: %p\n", Tnew);
 
-	PrintMatrix_Nice(result, size_i, size_j);
-	PrintMatrix(result, size_i, size_j, filename_out);
+	PrintMatrix_Nice(Tnew, size_i, size_j);
+	PrintMatrix(Tnew, size_i, size_j, filename_out);
 
 	return 0;
 }

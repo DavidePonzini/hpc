@@ -3,15 +3,21 @@
 from random import randrange
 from sys import argv
 
-maxv = int(argv[2])+1
-minv = int(argv[1])
-n = int(argv[3])
+if len(argv) < 5:
+	print("i, j, minv, maxv, p")
+	exit(1)
+
+
+i = int(argv[1])
+j = int(argv[2])
+minv = int(argv[3])
+maxv = int(argv[4])+1
 p = int(argv[4])
 
-for i in range(n):
-	for j in range(n):
+for ii in range(i):
+	for jj in range(j):
 		if randrange(p) == 0:
 			val = minv+randrange(maxv-minv)
 		else:
 			val = 0
-		print('{} {} {}'.format(i, j, val))
+		print('{} {} {}'.format(ii, jj, val))
