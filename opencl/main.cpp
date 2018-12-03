@@ -6,10 +6,12 @@
 using namespace std;
 
 
-void f(double* T, double* Tnew, int size, double k, double d, double c, double l, double delta_t, double max_time) {
+void f(double* T, double* Tnew, int size_i, int size_j, double k, double d, double c, double l, double delta_t, double max_time) {
 	double *m_in, *m_out, *aux;
 	m_in = T;
 	m_out = Tnew;
+	
+	// chrono
 	
 	for(double t=0.0; t <= max_time; t += delta_t) {
 		double p = k/(d*c);
@@ -17,15 +19,10 @@ void f(double* T, double* Tnew, int size, double k, double d, double c, double l
 		
 		//printf("discr: %f\tp: %f\n", discr, p);
 		
-		for(int i=1; i<size-1; i++) {
-			for(int j=1; j<size-1; j++) {
-				m_out[i*size + j] = m_in[i*size + j]*(1.0-4.0*discr*p) + discr*p*(
-					m_in[(i-1)*size + j] + m_in[(i+1)*size + j] + m_in[i*size + j-1] + m_in[i*size + j+1]);
-		/*		printf("out[%d, %d] = %f*(1-4*%f*%f) + %f*%f*(%f + %f + %f + %f = %f\n",
-							 i,  j,   m_in[(i-1)*size + j], discr,p,discr,p,
-							 m_in[(i-1)*size + j], m_in[(i+1)*size + j], m_in[i*size + j-1], m_in[i*size + j+1],
-							 m_out[i*size+j]);
-		*/
+		for(int i=1; i<size_i-1; i++) {
+			for(int j=1; j<size_j-1; j++) {
+				m_out[i*size_j + j] = m_in[i*size_j + j]*(1.0-4.0*discr*p) + discr*p*(
+					m_in[(i-1)*size_j + j] + m_in[(i+1)*size_j + j] + m_in[i*size_j + j-1] + m_in[i*size_j + j+1]);
 			}
 		}
 		
@@ -33,11 +30,13 @@ void f(double* T, double* Tnew, int size, double k, double d, double c, double l
 		m_in = m_out;
 		m_out = aux;
 	}
+	
+	// chrono
 }
 
 
 int main(int argc, char** argv) {
-	if(argc != 10)
+	if(argc != 11)
 		return 1;
 	
 	double slice, k, d, c, l, delta_t, max_time;

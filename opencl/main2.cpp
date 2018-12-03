@@ -32,17 +32,17 @@ const char* source =
 "	global double* aux;"
 
 "	for(int step=0; step<steps; step++) {"
-"		l_in[(ii+1)*(BLOCK+2) + jj+1] = in[i*size_i+j];"
+"		l_in[(ii+1)*(BLOCK+2) + jj+1] = in[i*size_j+j];"
 
 		// copy block in local mem
 "		if(!ii)"
-"			l_in[jj+1] = in[(i-1)*size_i+j];"
+"			l_in[jj+1] = in[(i-1)*size_j+j];"
 "		if(!jj)"
-"			l_in[(ii+1)*(BLOCK+2)] = in[i*size_i+j-1];"
+"			l_in[(ii+1)*(BLOCK+2)] = in[i*size_j+j-1];"
 "		if(ii == BLOCK-1)"
-"			l_in[(BLOCK+1)*(BLOCK+2)+jj+1] = in[(i+1)*size_i+j];"
+"			l_in[(BLOCK+1)*(BLOCK+2)+jj+1] = in[(i+1)*size_j+j];"
 "		if(jj == BLOCK-1)"
-"			l_in[(ii+1)*(BLOCK+2)+BLOCK+1] = in[i*size_i+j+1];"
+"			l_in[(ii+1)*(BLOCK+2)+BLOCK+1] = in[i*size_j+j+1];"
 
 "		barrier(CLK_LOCAL_MEM_FENCE);"
 
@@ -50,7 +50,8 @@ const char* source =
 "		if(i==0 || j == 0) return;"
 "		if(i == size_i-1 || j == size_j-1) return;"
 
-"		out[i*size_i + j] = l_in[(ii+1)*(BLOCK+2) + jj+1]*(1.0-4.0*discr*p) + discr*p*("
+		// compute result
+"		out[i*size_j + j] = l_in[(ii+1)*(BLOCK+2) + jj+1]*(1.0-4.0*discr*p) + discr*p*("
 "				l_in[ii*(BLOCK+2) + jj+1] +"
 "				l_in[(ii+2)*(BLOCK+2) + jj+1] +"
 "				l_in[(ii+1)*(BLOCK+2) + jj] +"
@@ -262,7 +263,7 @@ int main(int argc, char** argv) {
 	printf("t: %p\ntnew: %p\n\n", T, Tnew);
 
 	ReadMatrix(T, filename_in, size_i, size_j);
-	EmptyMatrix(Tnew, size_i, size_j);
+	ReadMatrix(Tnew, filename_in, size_i, size_j);
 
 	PrintMatrix_Nice(T, size_i, size_j);
 

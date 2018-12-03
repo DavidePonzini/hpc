@@ -17,7 +17,7 @@ void ReadMatrix(double* matrix, string filename, int size_i, int size_j) {
 		double val;
 
 		file >> row >> col >> val;
-		matrix[row*size_i + col] = val;
+		matrix[row*size_j + col] = val;
 	}
 
 	file.close();
@@ -32,9 +32,9 @@ void PrintMatrix(double* matrix, int size_i, int size_j, string filename) {
 	for(int row=0; row<size_i; row++)
 		for(int col=0; col<size_j; col++) {
 			if(!filename.empty())
-				file << row << ' ' << col << ' ' << matrix[row*size_i + col] << endl;
+				file << row << ' ' << col << ' ' << matrix[row*size_j + col] << endl;
 			else
-				cout << row << ' ' << col << ' ' << matrix[row*size_i + col] << endl;
+				cout << row << ' ' << col << ' ' << matrix[row*size_j + col] << endl;
 		}
 
 	if(!filename.empty())
@@ -49,9 +49,9 @@ void PrintMatrix_Nice(double* matrix, int size_i, int size_j, string filename) {
 	for(int row=0; row<size_i; row++) {
 		for(int col=0; col<size_j; col++) {
 			if(!filename.empty())
-				file << matrix[row*size_i + col] << '\t';
+				file << matrix[row*size_j + col] << '\t';
 			else
-				cout << matrix[row*size_i + col] << '\t';
+				cout << matrix[row*size_j + col] << '\t';
 		}
 
 		if(!filename.empty())
