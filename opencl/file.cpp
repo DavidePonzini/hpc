@@ -4,49 +4,54 @@
 #include <fstream>
 
 
-void ReadMatrix(double* matrix, string filename, int size) {
+void EmptyMatrix(double* matrix, int size_i, int size_j) {
+	for (int i=0; i<size_i*size_j; i++)
+		Tnew[i]=0;
+}
+
+void ReadMatrix(double* matrix, string filename, int size_i, int size_j) {
 	ifstream file(filename.c_str());
 
-	for(int i=0; i<size*size; i++) {
+	for(int i=0; i<size_i*size_j; i++) {
 		int row, col;
 		double val;
 
 		file >> row >> col >> val;
-		matrix[row*size + col] = val;
+		matrix[row*size_i + col] = val;
 	}
 
 	file.close();
 }
 
 
-void PrintMatrix(double* matrix, int size, string filename) {
+void PrintMatrix(double* matrix, int size_i, int size_j, string filename) {
 	ofstream file;
 	if(!filename.empty())
 		file.open(filename.c_str());
 
-	for(int row=0; row<size; row++)
-		for(int col=0; col<size; col++) {
+	for(int row=0; row<size_i; row++)
+		for(int col=0; col<size_j; col++) {
 			if(!filename.empty())
-				file << row << ' ' << col << ' ' << matrix[row*size + col] << endl;
+				file << row << ' ' << col << ' ' << matrix[row*size_i + col] << endl;
 			else
-				cout << row << ' ' << col << ' ' << matrix[row*size + col] << endl;
+				cout << row << ' ' << col << ' ' << matrix[row*size_i + col] << endl;
 		}
 
 	if(!filename.empty())
 		file.close();
 }
 
-void PrintMatrix_Nice(double* matrix, int size, string filename) {
+void PrintMatrix_Nice(double* matrix, int size_i, int size_j, string filename) {
 	ofstream file;
 	if(!filename.empty())
 		file.open(filename.c_str());
 
-	for(int row=0; row<size; row++) {
-		for(int col=0; col<size; col++) {
+	for(int row=0; row<size_i; row++) {
+		for(int col=0; col<size_j; col++) {
 			if(!filename.empty())
-				file << matrix[row*size + col] << '\t';
+				file << matrix[row*size_i + col] << '\t';
 			else
-				cout << matrix[row*size + col] << '\t';
+				cout << matrix[row*size_i + col] << '\t';
 		}
 
 		if(!filename.empty())
