@@ -1,8 +1,6 @@
 CC=g++
 CC_OPTS=
 
-BLOCK=1
-
 COLS?=15
 ROWS?=15
 K?=0.1
@@ -19,20 +17,15 @@ SCRIPT?=script.sh
 LOG?=log
 ERR?=err
 
-plot: run
-	gnuplot plot.gp
 
-run: compile
-	./main $(COLS) $(ROWS) $(K) $(D) $(C) $(STEP) $(DT) $(TIME) $(IN) $(OUT)
+cpu: main
+	./main $(ROWS) $(COLS) $(K) $(D) $(C) $(STEP) $(DT) $(TIME) $(IN) $(OUT)
 
-compile: *.cpp *.h
-	$(CC) -std=c++11 -O3 -o main $(CC_OPTS) *.cpp
+%: %.cpp file.cpp file.h
+	$(CC) -std=c++11 -lOpenCL -O3 -o $@ $(CC_OPTS) $@.cpp file.cpp
 
-compile2: main2.cpp file.cpp file.h
-	$(CC) -std=c++11 -lOpenCL -O3 -o main2 $(CC_OPTS) main2.cpp file.cpp # -DBLOCK=$(BLOCK)
-
-run2: compile2
+gpu: main2
 	echo '#!/bin/bash' > $(SCRIPT)
-	echo "`pwd`/main2 $(COLS) $(ROWS) $(K) $(D) $(C) $(STEP) $(DT) $(TIME) `pwd`/in `pwd`/out" > $(SCRIPT)
+	echo "`pwd`/main2 $(ROWS) $(COLS) $(K) $(D) $(C) $(STEP) $(DT) $(TIME) `pwd`/in `pwd`/out" > $(SCRIPT)
 
 	qsub -o $(LOG) -e $(ERR) $(SCRIPT)

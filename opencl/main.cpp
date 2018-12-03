@@ -78,7 +78,7 @@ int main(int argc, char** argv) {
 	
 	PrintMatrix_Nice(T, size_i, size_j);
 	
-	compute(T, Tnew, , size_i, size_j, k, d, c, l, delta_t, max_time);
+	compute(T, Tnew, size_i, size_j, k, d, c, l, delta_t, max_time);
 	
 	double* result = ((int)(max_time/delta_t) % 2) ? Tnew : T;
 	
