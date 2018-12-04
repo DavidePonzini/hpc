@@ -26,6 +26,6 @@ cpu: main
 
 gpu: main2
 	echo '#!/bin/bash' > $(SCRIPT)
-	echo "`pwd`/main2 $(ROWS) $(COLS) $(K) $(D) $(C) $(STEP) $(DT) $(TIME) `pwd`/in `pwd`/out" > $(SCRIPT)
+	echo "`pwd`/main2 $(ROWS) $(COLS) $(K) $(D) $(C) $(STEP) $(DT) $(TIME) `pwd`/$(IN) `pwd`/$(OUT)" > $(SCRIPT)
 
 	qsub -o $(LOG) -e $(ERR) $(SCRIPT)
