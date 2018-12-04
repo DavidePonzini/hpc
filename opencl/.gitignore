@@ -3,5 +3,7 @@ err
 log
 main
 main2
-out.png
+*.png
 script.sh
+*.dat
+
