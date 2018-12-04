@@ -8,14 +8,20 @@
 
 #include <CL/cl.h>
 
+
 using namespace std;
 
 
-#define  BLOCK 5
+#define  BLOCK 10
+
+#ifndef STEPS
+	#define STEPS 1
+#endif
+double min_exec_time = 1.0e100;
 
 
 const char* source =
-"#define BLOCK 5\n"
+"#define BLOCK 	0\n"
 
 "kernel void gpu_compute(global double* m_in, global double* m_out, int size_i, int size_j, double p, double discr, int steps) {"
 "	int i = get_global_id(0);"
@@ -209,8 +215,8 @@ int compute(double* T, double* Tnew, int size_i, int size_j, double k, double d,
 	err = clFinish(queue);
 #endif
 
-	err = clEnqueueReadBuffer(queue, ((int)(max_time/delta_t) % 2) ? bff2 : bff1, CL_TRUE, 0, size_i * size_j * sizeof(cl_double), m_out, 0, NULL, 
-	NULL);
+	err = clEnqueueReadBuffer(queue, ((int)(max_time/delta_t) % 2) ? bff2 : bff1, CL_TRUE, 0,
+		size_i * size_j * sizeof(cl_double), m_out, 0, NULL, NULL);
 	if (err != CL_SUCCESS){
 		cerr << "error getting results\n";
 		return err;
@@ -220,8 +226,9 @@ int compute(double* T, double* Tnew, int size_i, int size_j, double k, double d,
 	t_end = chrono::high_resolution_clock::now();
 	/////////////////////////////////////////////
 
-	exec_time = t_end - t_start;
-	cout << "execution time: " << exec_time.count() * 1e6 << " usec\n";
+	exec_time = (t_end - t_start)/steps;
+	if (exec_time.count() < min_exec_time)
+		min_exec_time = exec_time.count();
 	
 	clReleaseMemObject(bff1);
 	clReleaseMemObject(bff2);
@@ -258,22 +265,25 @@ int main(int argc, char** argv) {
 	int size_j = slice_j/l;
 
 	double *T, *Tnew;
-	T = new double[size_i*size_j];
-	Tnew = new double[size_i*size_j];
+	for(int step=0; step<STEPS; step++) {
+		T = new double[size_i*size_j];
+		Tnew = new double[size_i*size_j];
 
-	ReadMatrix(T, filename_in, size_i, size_j);
-	ReadMatrix(Tnew, filename_in, size_i, size_j);
+		ReadMatrix(T, filename_in, size_i, size_j);
+		ReadMatrix(Tnew, filename_in, size_i, size_j);
 
-	PrintMatrix_Nice(T, size_i, size_j);
+	//	PrintMatrix_Nice(T, size_i, size_j);
 
-	int status = compute(T, Tnew, size_i, size_j, k, d, c, l, delta_t, max_time);
-	if(status) {
-		cerr << "exit code: " << status << endl;
-		return status;
+		int status = compute(T, Tnew, size_i, size_j, k, d, c, l, delta_t, max_time);
+		if(status) {
+			cerr << "exit code: " << status << endl;
+			return status;
+		}
 	}
-
-	PrintMatrix_Nice(Tnew, size_i, size_j);
+//	PrintMatrix_Nice(Tnew, size_i, size_j);
 	PrintMatrix(Tnew, size_i, size_j, filename_out);
+	
+	cout << "Execution time: " << min_exec_time*1e6 << " usec per cycle" << endl;
 
 	return 0;
 }
