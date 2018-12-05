@@ -12,7 +12,7 @@
 using namespace std;
 
 
-#define  BLOCK 10
+#define BLOCK 20
 
 #ifndef TRIALS
 	#define TRIALS 1
@@ -21,7 +21,7 @@ double min_exec_time = 1.0e100;
 
 
 const char* source =
-"#define BLOCK 10\n"
+"#define BLOCK 20\n"
 
 "kernel void gpu_compute(global double* m_in, global double* m_out, int size_i, int size_j, double p, double discr, int steps) {"
 "	int i = get_global_id(0);"
@@ -30,6 +30,9 @@ const char* source =
 "	int ii = get_local_id(0);"
 "	int jj = get_local_id(1);"
 
+"	int l_ii = ii+1;"
+"	int l_jj = jj+1;"
+
 "	local double l_in[(BLOCK+2)*(BLOCK+2)];"
 
 "	global double* in = m_in;"
@@ -37,42 +40,49 @@ const char* source =
 "	global double* aux;"
 
 "	for(int step=0; step<steps; step++) {"
-"		l_in[(ii+1)*(BLOCK+2) + jj+1] = in[i*size_j+j];"
-
 		// copy block in local mem
-"		if(!ii)"
-"			l_in[jj+1] = in[(i-1)*size_j+j];"
-"		if(!jj)"
-"			l_in[(ii+1)*(BLOCK+2)] = in[i*size_j+j-1];"
-"		if(ii == BLOCK-1)"
-"			l_in[(BLOCK+1)*(BLOCK+2)+jj+1] = in[(i+1)*size_j+j];"
-"		if(jj == BLOCK-1)"
-"			l_in[(ii+1)*(BLOCK+2)+BLOCK+1] = in[i*size_j+j+1];"
+"		l_in[l_ii*(BLOCK+2) + l_jj] = in[i*size_j+j];"
+
+		// skip edges
+"		if(i != 0 && j != 0 && i != size_i-1 && j != size_j-1) {"
+			// copy block edges in local mem
+"			if(!ii)"
+"				l_in[/*(l_ii-1)*(BLOCK+2) +*/ l_jj] = in[(i-1)*size_j+j];"
+"			if(ii == BLOCK-1)"
+"				l_in[(l_ii+1)*(BLOCK+2) + l_jj] = in[(i+1)*size_j+j];"
+"			if(!jj)"
+"				l_in[l_ii*(BLOCK+2) /* + l_jj-1*/] = in[i*size_j+j-1];"
+"			if(jj == BLOCK-1)"
+"				l_in[l_ii*(BLOCK+2) + l_jj+1] = in[i*size_j+j+1];"
+"		}"
 
 "		barrier(CLK_LOCAL_MEM_FENCE);"
 
 		// skip edges
-"		if(i==0 || j == 0) return;"
-"		if(i == size_i-1 || j == size_j-1) return;"
-
-		// compute result
-"		out[i*size_j + j] = l_in[(ii+1)*(BLOCK+2) + jj+1]*(1.0-4.0*discr*p) + discr*p*("
-"				l_in[ii*(BLOCK+2) + jj+1] +"
-"				l_in[(ii+2)*(BLOCK+2) + jj+1] +"
-"				l_in[(ii+1)*(BLOCK+2) + jj] +"
-"				l_in[(ii+1)*(BLOCK+2) + jj+2]);"
-
-"		barrier(CLK_LOCAL_MEM_FENCE);"
+"		if(i != 0 && j != 0 && i != size_i-1 && j != size_j-1) {"
+			// compute result
+"			out[i*size_j + j] = l_in[l_ii*(BLOCK+2) + l_jj]*(1.0-4.0*discr*p) + discr*p*("
+"				l_in[(l_ii-1)*(BLOCK+2) + l_jj] +"
+"				l_in[(l_ii+1)*(BLOCK+2) + l_jj] +"
+"				l_in[l_ii*(BLOCK+2) + l_jj-1] +"
+"				l_in[l_ii*(BLOCK+2) + l_jj+1]);"
+"		}"
 
 "		aux=in;"
 "		in=out;"
 "		out=aux;"
+
+"		barrier(CLK_GLOBAL_MEM_FENCE);"
+
 "	}"
 "}";
 
+
+#define DEBUG_KERNEL_BUILD
 #ifdef DEBUG_KERNEL_BUILD
 	string get_error_string(int e) { return ""+e; }
 #endif
+
 
 int compute(double* T, double* Tnew, int size_i, int size_j, double k, double d, double c, double l, double delta_t, double max_time) {
 	double *m_in, *m_out, *aux;
@@ -91,7 +101,7 @@ int compute(double* T, double* Tnew, int size_i, int size_j, double k, double d,
 	cl_mem bff1, bff2;
 
 	chrono::high_resolution_clock::time_point t_start,t_end;
-    chrono::duration<double> exec_time;
+	chrono::duration<double> exec_time;
 
 	if (clGetPlatformIDs(1,&platform_id,&n_platforms) != CL_SUCCESS) {
 		cerr << "error: no platform\n";
@@ -234,7 +244,7 @@ int compute(double* T, double* Tnew, int size_i, int size_j, double k, double d,
 	exec_time = (t_end - t_start)/steps;
 	if (exec_time.count() < min_exec_time)
 		min_exec_time = exec_time.count();
-	
+
 	clReleaseMemObject(bff1);
 	clReleaseMemObject(bff2);
 	clReleaseKernel(kernel);

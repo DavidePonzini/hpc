@@ -34,3 +34,5 @@ gpu: main2
 	$(CC) -std=c++11 -lOpenCL -O3 -o $@ $(CC_OPTS) $@.cpp file.cpp
 
 
+clean:
+	rm -f log/* err/* small_out*
