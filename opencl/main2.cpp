@@ -14,14 +14,14 @@ using namespace std;
 
 #define  BLOCK 10
 
-#ifndef STEPS
-	#define STEPS 1
+#ifndef TRIALS
+	#define TRIALS 1
 #endif
 double min_exec_time = 1.0e100;
 
 
 const char* source =
-"#define BLOCK 	0\n"
+"#define BLOCK 10\n"
 
 "kernel void gpu_compute(global double* m_in, global double* m_out, int size_i, int size_j, double p, double discr, int steps) {"
 "	int i = get_global_id(0);"
@@ -171,10 +171,10 @@ int compute(double* T, double* Tnew, int size_i, int size_j, double k, double d,
 	int steps = max_time/delta_t;
 	double p = k/(d*c);
 	double discr = delta_t/(l*l);
-	
+
 	///////////////////////////////////////////////
-    t_start = chrono::high_resolution_clock::now();
-    ///////////////////////////////////////////////
+	t_start = chrono::high_resolution_clock::now();
+	///////////////////////////////////////////////
 
 	bff1 = clCreateBuffer(context, /*CL_MEM_READ_ONLY*/   CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
 		size_i * size_j * sizeof(cl_double), m_in, &err);
@@ -190,7 +190,12 @@ int compute(double* T, double* Tnew, int size_i, int size_j, double k, double d,
 	err |= clSetKernelArg(kernel, 6, sizeof(steps), &steps);
 
 	if (err != CL_SUCCESS){
-		cerr << "error creating or passing parameters to kernel\n";
+		cerr << "error creating or passing parameters to kernel" << endl
+			<< "size_i=" << size_i << endl
+			<< "size_j=" << size_j << endl
+			<< "p=" << p << endl
+			<< "discr=" << discr << endl
+			<< "steps=" << steps << endl;
 		return err;
 	};
 
@@ -265,7 +270,7 @@ int main(int argc, char** argv) {
 	int size_j = slice_j/l;
 
 	double *T, *Tnew;
-	for(int step=0; step<STEPS; step++) {
+	for(int trial=0; trial<TRIALS; trial++) {
 		T = new double[size_i*size_j];
 		Tnew = new double[size_i*size_j];
 
@@ -282,7 +287,7 @@ int main(int argc, char** argv) {
 	}
 //	PrintMatrix_Nice(Tnew, size_i, size_j);
 	PrintMatrix(Tnew, size_i, size_j, filename_out);
-	
+
 	cout << "Execution time: " << min_exec_time*1e6 << " usec per cycle" << endl;
 
 	return 0;

@@ -9,8 +9,8 @@
 using namespace std;
 
 
-#ifndef STEPS
-	#define STEPS 1
+#ifndef TRIALS
+	#define TRIALS 1
 #endif
 double min_exec_time = 1.0e100;
 
@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
 	int size_j = slice_j/l;
 
 	double *T, *Tnew;
-	for(int step=0; step<STEPS; step++) {
+	for(int trial=0; trial<TRIALS; trial++) {
 		T = new double[size_i*size_j];
 		Tnew = new double[size_i*size_j];
 		
