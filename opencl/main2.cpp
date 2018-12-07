@@ -11,8 +11,9 @@
 
 using namespace std;
 
+#define SKIP_OVERHEAD
 
-#define BLOCK 20
+#define BLOCK 10
 
 #ifndef TRIALS
 	#define TRIALS 1
@@ -21,60 +22,57 @@ double min_exec_time = 1.0e100;
 
 
 const char* source =
-"#define BLOCK 20\n"
+//"#define BLOCK 10\n"
 
-"kernel void gpu_compute(global double* m_in, global double* m_out, int size_i, int size_j, double p, double discr, int steps) {"
+"kernel void gpu_compute(global double* m_in, global double* m_out, int size_i, int size_j, double p, double discr) {"
 "	int i = get_global_id(0);"
 "	int j = get_global_id(1);"
 
-"	int ii = get_local_id(0);"
-"	int jj = get_local_id(1);"
+//"	int ii = get_local_id(0);"
+//"	int jj = get_local_id(1);"
 
-"	int l_ii = ii+1;"
-"	int l_jj = jj+1;"
+//"	int l_ii = ii+1;"
+//"	int l_jj = jj+1;"
 
-"	local double l_in[(BLOCK+2)*(BLOCK+2)];"
+//"	local double l_in[(BLOCK+2)*(BLOCK+2)];"
 
-"	global double* in = m_in;"
-"	global double* out = m_out;"
-"	global double* aux;"
+	// copy block in local mem
+//"	l_in[l_ii*(BLOCK+2) + l_jj] = in[i*size_j+j];"
 
-"	for(int step=0; step<steps; step++) {"
-		// copy block in local mem
-"		l_in[l_ii*(BLOCK+2) + l_jj] = in[i*size_j+j];"
+	// skip edges
+//"	if(i != 0 && j != 0 && i != size_i-1 && j != size_j-1) {"
+		// copy block edges in local mem
+//"		if(!ii)"
+//"			l_in[/*(l_ii-1)*(BLOCK+2) +*/ l_jj] = in[(i-1)*size_j+j];"
+//"		if(ii == BLOCK-1)"
+//"			l_in[(l_ii+1)*(BLOCK+2) + l_jj] = in[(i+1)*size_j+j];"
+//"		if(!jj)"
+//"			l_in[l_ii*(BLOCK+2) /* + l_jj-1*/] = in[i*size_j+j-1];"
+//"		if(jj == BLOCK-1)"
+//"			l_in[l_ii*(BLOCK+2) + l_jj+1] = in[i*size_j+j+1];"
+//"	}"
 
-		// skip edges
-"		if(i != 0 && j != 0 && i != size_i-1 && j != size_j-1) {"
-			// copy block edges in local mem
-"			if(!ii)"
-"				l_in[/*(l_ii-1)*(BLOCK+2) +*/ l_jj] = in[(i-1)*size_j+j];"
-"			if(ii == BLOCK-1)"
-"				l_in[(l_ii+1)*(BLOCK+2) + l_jj] = in[(i+1)*size_j+j];"
-"			if(!jj)"
-"				l_in[l_ii*(BLOCK+2) /* + l_jj-1*/] = in[i*size_j+j-1];"
-"			if(jj == BLOCK-1)"
-"				l_in[l_ii*(BLOCK+2) + l_jj+1] = in[i*size_j+j+1];"
+//"	barrier(CLK_LOCAL_MEM_FENCE);"
+
+	// skip edges
+"	if(i != 0 && j != 0 && i != size_i-1 && j != size_j-1) {"
+		// compute result
+//"		out[i*size_j + j] = in[i*size_j + j]+i*1000+j;"
+
+"		m_out[i*size_j + j] = m_in[i*size_j + j]*(1.0-4.0*discr*p) + discr*p*("
+"			m_in[(i-1)*size_j + j] +"
+"			m_in[(i+1)*size_j + j] +"
+"			m_in[i*size_j + j-1] +"
+"			m_in[i*size_j + j+1]);"
 "		}"
 
-"		barrier(CLK_LOCAL_MEM_FENCE);"
+//"	aux=in;"
+//"	in=out;"
+//"	out=aux;"
 
-		// skip edges
-"		if(i != 0 && j != 0 && i != size_i-1 && j != size_j-1) {"
-			// compute result
-"			out[i*size_j + j] = l_in[l_ii*(BLOCK+2) + l_jj]*(1.0-4.0*discr*p) + discr*p*("
-"				l_in[(l_ii-1)*(BLOCK+2) + l_jj] +"
-"				l_in[(l_ii+1)*(BLOCK+2) + l_jj] +"
-"				l_in[l_ii*(BLOCK+2) + l_jj-1] +"
-"				l_in[l_ii*(BLOCK+2) + l_jj+1]);"
-"		}"
+//"	barrier(CLK_LOCAL_MEM_FENCE);"
+//"	barrier(CLK_GLOBAL_MEM_FENCE);"
 
-"		aux=in;"
-"		in=out;"
-"		out=aux;"
-
-"		barrier(CLK_GLOBAL_MEM_FENCE);"
-
-"	}"
 "}";
 
 
@@ -108,7 +106,7 @@ int compute(double* T, double* Tnew, int size_i, int size_j, double k, double d,
 		return err;
 	};
 
-	if (clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1, &device_id, &n_devices) != CL_SUCCESS)
+	if (clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_CPU, 1, &device_id, &n_devices) != CL_SUCCESS)
 	{
 		cerr << "error: no device\n";
 		return err;
@@ -186,56 +184,66 @@ int compute(double* T, double* Tnew, int size_i, int size_j, double k, double d,
 	t_start = chrono::high_resolution_clock::now();
 	///////////////////////////////////////////////
 
-	bff1 = clCreateBuffer(context, /*CL_MEM_READ_ONLY*/   CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
-		size_i * size_j * sizeof(cl_double), m_in, &err);
-	bff2 = clCreateBuffer(context, /*CL_MEM_WRITE_ONLY*/ CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
-		size_i * size_j * sizeof(cl_double), m_out, &err);
+	for(int step=0; step < steps; step++) {
+		printf("step %d:\tin=%p\tout=%p\tin[50,50]=%f\n", step, m_in, m_out, m_in[50*size_j+50]);
+		bff1 = clCreateBuffer(context, /*CL_MEM_READ_ONLY*/   CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+			size_i * size_j * sizeof(cl_double), m_in, &err);
+		bff2 = clCreateBuffer(context, /*CL_MEM_WRITE_ONLY*/ CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+			size_i * size_j * sizeof(cl_double), m_out, &err);
 
-	err |= clSetKernelArg(kernel, 0, sizeof(bff1), &bff1);
-	err |= clSetKernelArg(kernel, 1, sizeof(bff2), &bff2);
-	err |= clSetKernelArg(kernel, 2, sizeof(size_i), &size_i);
-	err |= clSetKernelArg(kernel, 3, sizeof(size_j), &size_j);
-	err |= clSetKernelArg(kernel, 4, sizeof(p), &p);
-	err |= clSetKernelArg(kernel, 5, sizeof(discr), &discr);
-	err |= clSetKernelArg(kernel, 6, sizeof(steps), &steps);
+		err |= clSetKernelArg(kernel, 0, sizeof(bff1), &bff1);
+		err |= clSetKernelArg(kernel, 1, sizeof(bff2), &bff2);
+		err |= clSetKernelArg(kernel, 2, sizeof(size_i), &size_i);
+		err |= clSetKernelArg(kernel, 3, sizeof(size_j), &size_j);
+		err |= clSetKernelArg(kernel, 4, sizeof(p), &p);
+		err |= clSetKernelArg(kernel, 5, sizeof(discr), &discr);
 
-	if (err != CL_SUCCESS){
-		cerr << "error creating or passing parameters to kernel" << endl
-			<< "size_i=" << size_i << endl
-			<< "size_j=" << size_j << endl
-			<< "p=" << p << endl
-			<< "discr=" << discr << endl
-			<< "steps=" << steps << endl;
-		return err;
-	};
+		if (err != CL_SUCCESS){
+			cerr << "error creating or passing parameters to kernel" << endl
+				<< "size_i=" << size_i << endl
+				<< "size_j=" << size_j << endl
+				<< "p=" << p << endl
+				<< "discr=" << discr << endl
+				<< "steps=" << steps << endl;
+			return err;
+		};
 
 // skip mem overhead
 #ifdef SKIP_OVERHEAD
-	err = clEnqueueWriteBuffer(queue, bff1, CL_FALSE, 0, size_i * size_j * sizeof(cl_double), m_in, 0, NULL, NULL);
-	// be sure the transfer is done before running the kernel
-	err = clFinish(queue);
-	if (err != CL_SUCCESS){
-		cerr << "error passing input data\n";
-		return err;
-	};
+		err = clEnqueueWriteBuffer(queue, bff1, CL_FALSE, 0, size_i * size_j * sizeof(cl_double), m_in, 0, NULL, NULL);
+		// be sure the transfer is done before running the kernel
+		err = clFinish(queue);
+		if (err != CL_SUCCESS){
+			cerr << "error passing input data\n";
+			return err;
+		};
 #endif
 
-	err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global_pattern, group_pattern, 0, NULL, NULL);
-	if (err != CL_SUCCESS){
-		cerr << "error running kernel\n";
-		return err;
-	};
+		err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global_pattern, group_pattern, 0, NULL, NULL);
+		if (err != CL_SUCCESS){
+			cerr << "error running kernel\n";
+			return err;
+		};
 
 #ifdef SKIP_OVERHEAD
-	err = clFinish(queue);
+		err = clFinish(queue);
 #endif
 
-	err = clEnqueueReadBuffer(queue, ((int)(max_time/delta_t) % 2) ? bff2 : bff1, CL_TRUE, 0,
-		size_i * size_j * sizeof(cl_double), m_out, 0, NULL, NULL);
-	if (err != CL_SUCCESS){
-		cerr << "error getting results\n";
-		return err;
-	};
+		err = clEnqueueReadBuffer(queue, bff2, CL_TRUE, 0,
+			size_i * size_j * sizeof(cl_double), m_out, 0, NULL, NULL);
+		if (err != CL_SUCCESS){
+			cerr << "error getting results\n";
+			return err;
+		};
+
+		double* aux = m_out;
+		m_out = m_in;
+		m_in = aux;
+	}
+
+	m_out = m_in;
+	printf("res=%p\tres[50,50]=%f\n", m_out, m_out[50*size_j+50]);
+
 
 	/////////////////////////////////////////////
 	t_end = chrono::high_resolution_clock::now();
@@ -295,8 +303,10 @@ int main(int argc, char** argv) {
 			return status;
 		}
 	}
-//	PrintMatrix_Nice(Tnew, size_i, size_j);
-	PrintMatrix(Tnew, size_i, size_j, filename_out);
+	
+	double* res = ((int) (max_time/delta_t)) % 2 ? Tnew : T;
+//	PrintMatrix_Nice(res, size_i, size_j);
+	PrintMatrix(res, size_i, size_j, filename_out);
 
 	cout << "Execution time: " << min_exec_time*1e6 << " usec per cycle" << endl;
 

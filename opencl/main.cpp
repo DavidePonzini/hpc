@@ -21,28 +21,31 @@ void compute(double* T, double* Tnew, int size_i, int size_j, double k, double d
 	m_out = Tnew;
 
 	chrono::high_resolution_clock::time_point t_start,t_end;
-    chrono::duration<double> exec_time;
-	
+	chrono::duration<double> exec_time;
+
 	double p = k/(d*c);
 	double discr = delta_t/(l*l);
-	
+
 	///////////////////////////////////////////////
-    t_start = chrono::high_resolution_clock::now();
-    ///////////////////////////////////////////////
-	
-	for(double t=0.0; t <= max_time; t += delta_t) {	
+	t_start = chrono::high_resolution_clock::now();
+	///////////////////////////////////////////////
+
+	for(double t=0.0; t <= max_time; t += delta_t) {
 		for(int i=1; i<size_i-1; i++) {
 			for(int j=1; j<size_j-1; j++) {
 				m_out[i*size_j + j] = m_in[i*size_j + j]*(1.0-4.0*discr*p) + discr*p*(
-					m_in[(i-1)*size_j + j] + m_in[(i+1)*size_j + j] + m_in[i*size_j + j-1] + m_in[i*size_j + j+1]);
+					m_in[(i-1)*size_j + j] +
+					m_in[(i+1)*size_j + j] +
+					m_in[i*size_j + j-1] +
+					m_in[i*size_j + j+1]);
 			}
 		}
-		
+
 		aux = m_in;
 		m_in = m_out;
 		m_out = aux;
 	}
-	
+
 	/////////////////////////////////////////////
 	t_end = chrono::high_resolution_clock::now();
 	/////////////////////////////////////////////
@@ -71,7 +74,7 @@ int main(int argc, char** argv) {
 
 	filename_in = argv[9];
 	filename_out = argv[10];
-	
+
 	// normalization
 	int size_i = slice_i/l;
 	int size_j = slice_j/l;
@@ -80,22 +83,22 @@ int main(int argc, char** argv) {
 	for(int trial=0; trial<TRIALS; trial++) {
 		T = new double[size_i*size_j];
 		Tnew = new double[size_i*size_j];
-		
+
 		ReadMatrix(T, filename_in, size_i, size_j);
 		ReadMatrix(Tnew, filename_in, size_i, size_j);
-		
+
 //		PrintMatrix_Nice(T, size_i, size_j);
-		
+
 		compute(T, Tnew, size_i, size_j, k, d, c, l, delta_t, max_time);
 	}
-	
+
 	double* result = ((int)(max_time/delta_t) % 2) ? Tnew : T;
-	
+
 //	PrintMatrix_Nice(result, size_i, size_j);
 	PrintMatrix(result, size_i, size_j, filename_out);
-	
+
 	cout << "Execution time: " << min_exec_time*1e6 << " usec per cycle" << endl;
-	
+
 	return 0;
 }
 
