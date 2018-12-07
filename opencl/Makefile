@@ -18,15 +18,21 @@ LOG?=log
 ERR?=err
 
 
-cpu: main
+cpu: main_cpu
 	echo '#!/bin/bash' > $(SCRIPT)
-	echo "`pwd`/main $(ROWS) $(COLS) $(K) $(D) $(C) $(L) $(DT) $(TIME) `pwd`/$(IN) `pwd`/$(OUT)_cpu_$(TIME)" > $(SCRIPT)
+	echo "`pwd`/main_cpu $(ROWS) $(COLS) $(K) $(D) $(C) $(L) $(DT) $(TIME) `pwd`/$(IN) `pwd`/$(OUT)_cpu_$(TIME)" > $(SCRIPT)
 
 	qsub -o log/$(LOG)_$(IN)_cpu_$(TIME) -e err/$(ERR)_$(IN)_cpu_$(TIME) $(SCRIPT)
 
-gpu: main2
+gpu_g: main_gpu_global
 	echo '#!/bin/bash' > $(SCRIPT)
-	echo "`pwd`/main2 $(ROWS) $(COLS) $(K) $(D) $(C) $(L) $(DT) $(TIME) `pwd`/$(IN) `pwd`/$(OUT)_gpu_$(TIME)" > $(SCRIPT)
+	echo "`pwd`/main_gpu_global $(ROWS) $(COLS) $(K) $(D) $(C) $(L) $(DT) $(TIME) `pwd`/$(IN) `pwd`/$(OUT)_gpu_$(TIME)" > $(SCRIPT)
+
+	qsub -o log/$(LOG)_$(IN)_gpu_$(TIME) -e err/$(ERR)_$(IN)_gpu_$(TIME) $(SCRIPT)
+
+gpu_l: main_gpu_local
+	echo '#!/bin/bash' > $(SCRIPT)
+	echo "`pwd`/main_gpu_local $(ROWS) $(COLS) $(K) $(D) $(C) $(L) $(DT) $(TIME) `pwd`/$(IN) `pwd`/$(OUT)_gpu_$(TIME)" > $(SCRIPT)
 
 	qsub -o log/$(LOG)_$(IN)_gpu_$(TIME) -e err/$(ERR)_$(IN)_gpu_$(TIME) $(SCRIPT)
 
@@ -35,4 +41,4 @@ gpu: main2
 
 
 clean:
-	rm -f log/* err/* small_out*
+	rm -vf log/* err/* small_out* main_cpu main_gpu_global main_gpu_local
