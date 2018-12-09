@@ -1,0 +1,8 @@
+#!/bin/bash
+
+rm -fv *out*.png
+
+for f in `ls *out*`; do
+	echo $f
+	gnuplot -c plot.gp $f
+done
