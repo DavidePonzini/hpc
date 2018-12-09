@@ -1,0 +1,24 @@
+#!/bin/bash
+
+sz=$1
+i=$2
+j=$3
+l=$4
+
+make cpu ROWS=$i COLS=$j L=$l IN=${sz}_in.dat OUT=${sz}_out.dat TIME=1 CC_OPTS='-DTRIALS=5'
+make cpu ROWS=$i COLS=$j L=$l IN=${sz}_in.dat OUT=${sz}_out.dat TIME=5 CC_OPTS='-DTRIALS=5'
+make cpu ROWS=$i COLS=$j L=$l IN=${sz}_in.dat OUT=${sz}_out.dat TIME=10 CC_OPTS='-DTRIALS=5'
+make cpu ROWS=$i COLS=$j L=$l IN=${sz}_in.dat OUT=${sz}_out.dat TIME=100 CC_OPTS='-DTRIALS=5'
+make cpu ROWS=$i COLS=$j L=$l IN=${sz}_in.dat OUT=${sz}_out.dat TIME=1000 CC_OPTS='-DTRIALS=5'
+
+make gpu_l ROWS=$i COLS=$j L=$l IN=${sz}_in.dat OUT=${sz}_out.dat TIME=1 CC_OPTS='-DTRIALS=5'
+make gpu_l ROWS=$i COLS=$j L=$l IN=${sz}_in.dat OUT=${sz}_out.dat TIME=5 CC_OPTS='-DTRIALS=5'
+make gpu_l ROWS=$i COLS=$j L=$l IN=${sz}_in.dat OUT=${sz}_out.dat TIME=10 CC_OPTS='-DTRIALS=5'
+make gpu_l ROWS=$i COLS=$j L=$l IN=${sz}_in.dat OUT=${sz}_out.dat TIME=100 CC_OPTS='-DTRIALS=5'
+make gpu_l ROWS=$i COLS=$j L=$l IN=${sz}_in.dat OUT=${sz}_out.dat TIME=1000 CC_OPTS='-DTRIALS=5'
+
+make gpu_g ROWS=$i COLS=$j L=$l IN=${sz}_in.dat OUT=${sz}_out.dat TIME=1 CC_OPTS='-DTRIALS=5'
+make gpu_g ROWS=$i COLS=$j L=$l IN=${sz}_in.dat OUT=${sz}_out.dat TIME=5 CC_OPTS='-DTRIALS=5'
+make gpu_g ROWS=$i COLS=$j L=$l IN=${sz}_in.dat OUT=${sz}_out.dat TIME=10 CC_OPTS='-DTRIALS=5'
+make gpu_g ROWS=$i COLS=$j L=$l IN=${sz}_in.dat OUT=${sz}_out.dat TIME=100 CC_OPTS='-DTRIALS=5'
+make gpu_g ROWS=$i COLS=$j L=$l IN=${sz}_in.dat OUT=${sz}_out.dat TIME=1000 CC_OPTS='-DTRIALS=5'

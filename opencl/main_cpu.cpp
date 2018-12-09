@@ -80,10 +80,10 @@ int main(int argc, char** argv) {
 	int size_j = slice_j/l;
 
 	double *T, *Tnew;
-	for(int trial=0; trial<TRIALS; trial++) {
-		T = new double[size_i*size_j];
-		Tnew = new double[size_i*size_j];
+	T = new double[size_i*size_j];
+	Tnew = new double[size_i*size_j];
 
+	for(int trial=0; trial<TRIALS; trial++) {
 		ReadMatrix(T, filename_in, size_i, size_j);
 		ReadMatrix(Tnew, filename_in, size_i, size_j);
 

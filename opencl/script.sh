@@ -1,1 +1,1 @@
-/home/user11/hpc/opencl/main_gpu_local .1 .1 0.0001 1000 1 0.001 1 1000 /home/user11/hpc/opencl/small_in.dat /home/user11/hpc/opencl/small_out.dat_gpu_1000
+/home/user11/hpc/opencl/main_cpu 2 1 0.0001 1000 1 0.0001 1 100 /home/user11/hpc/opencl/xxl_in.dat /home/user11/hpc/opencl/xxl_out.dat_cpu_100

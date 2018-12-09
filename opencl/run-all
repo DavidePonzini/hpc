@@ -1,0 +1,7 @@
+#!/bin/bash
+
+./run small 0.1 0.1 0.001
+./run medium 0.1 1 0.001
+./run large 1 1 0.001
+./run-xxl
+

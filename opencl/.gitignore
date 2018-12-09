@@ -5,5 +5,8 @@ main
 main2
 *.png
 script.sh
-*.dat
+*.dat*
 
+main_cpu
+main_gpu_local
+main_gpu_global
